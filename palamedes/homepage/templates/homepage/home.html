@@ -1,4 +1,25 @@
-{%extends "homepage/base.html" %}
+{% extends "homepage/base.html" %}
 {% block content %}
-<h1>Palamedes Homepage</h1>
+<div class="jumbotron text-center bg-white border shadow-sm">
+    <h1 class="display-4">Palamedes</h1>
+    <p class="lead">The Fraternity Management System.</p>
+    <hr class="my-4">
+    <p>Manage your chapter's points, dues, and tasks without the expensive fees.</p>
+    <a class="btn btn-primary btn-lg" href="{% url 'start_chapter' %}" role="button">Start Your Chapter</a>
+</div>
+
+<div class="row text-center mt-5">
+    <div class="col-md-4">
+        <h3>🏆 House Points</h3>
+        <p>Track participation with ease. Custom leaderboards for Actives and New Members.</p>
+    </div>
+    <div class="col-md-4">
+        <h3>💰 Dues Ledger</h3>
+        <p>Assign dues, track payments, and maintain transparency with a simple financial ledger.</p>
+    </div>
+    <div class="col-md-4">
+        <h3>✅ Task Manager</h3>
+        <p>Assign duties, set deadlines, and ensure your chapter operations run smoothly.</p>
+    </div>
+</div>
 {% endblock content %}
