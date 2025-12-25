@@ -9,7 +9,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'first_name', 'last_name', 'major', 'invite_code')
+        fields = ('username', 'email', 'first_name', 'last_name', 'major')
 
     def clean_invite_code(self):
         code = self.cleaned_data.get('invite_code')
