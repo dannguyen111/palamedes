@@ -26,7 +26,7 @@ def approve_requests(modeladmin, request, queryset):
         req.save()
 
         # 4. Send the Email (Prints to Console)
-        subject = f"Congratulations! {req.fraternity_name} is Approved."
+        subject = f"Palamedes: {req.fraternity_name} at {req.university} is Approved."
         message = f"""
         Hello President,
 
