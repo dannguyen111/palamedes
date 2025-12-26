@@ -2,5 +2,41 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<h1>{{ user.username }}</h1>
-{% endblock %}
+<div class="content-section">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-body text-center">
+                    <img class="rounded-circle account-img mb-3" src="{{ user.image.url }}"
+                        style="width: 150px; height: 150px; object-fit: cover;">
+                    <h4>{{ user.first_name }} {{ user.last_name }}</h4>
+                    <p class="text-secondary">{{ user.email }}</p>
+                    <hr>
+                    <div class="text-left">
+                        <p><strong>Role:</strong> {{ user.get_role_display }}</p>
+                        <p><strong>Chapter:</strong> {{ user.chapter.name }}</p>
+                        <p><strong>Major:</strong> {{ user.major }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    Update Profile Info
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ p_form|crispy }}
+                        <div class="form-group">
+                            <button class="btn btn-outline-primary" type="submit">Update</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

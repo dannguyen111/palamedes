@@ -29,18 +29,28 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
                 </ul>
 
-                <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <span class="nav-link text-white">Hello, {{ user.username }}</span>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-outline-light ml-2" href="{% url 'profile' %}">Profile</a>
-                    <li class="nav-item">
-                        <form action="{% url 'logout' %}" method="post" class="form-inline">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-link nav-link">Logout</button>
-                        </form>
+                <ul class="navbar-nav ml-auto"> {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle font-weight-bold text-white" href="#" id="userMenu"
+                            role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {% if user.image %}
+                            <img src="{{ user.image.url }}" class="rounded-circle mr-1"
+                                style="width: 30px; height: 30px; object-fit: cover;">
+                            {% endif %}
+                            {{ user.username }}
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userMenu">
+                            <a class="dropdown-item" href="{% url 'profile' %}">
+                                My Profile
+                            </a>
+
+                            <div class="dropdown-divider"></div>
+
+                            <form action="{% url 'logout' %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger">Logout</button>
+                            </form>
+                        </div>
                     </li>
                     {% else %}
                     <li class="nav-item">

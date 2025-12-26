@@ -47,3 +47,8 @@ class CustomUserCreationForm(UserCreationForm):
             self.save_m2m() 
             
         return user
+    
+class ProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'email', 'image', 'major', 'phone_number', 'hometown', 'bio']
