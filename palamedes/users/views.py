@@ -10,7 +10,7 @@ def register(request):
             username = form.cleaned_data.get('username')
             role = user.get_role_display()
             messages.success(request, f'Account created for {username}! You are registered as: {role}')
-            return redirect('home') # Redirect to home (or login page later)
+            return redirect('login')
     else:
         form = CustomUserCreationForm()
     return render(request, 'users/register.html', {'form': form})
