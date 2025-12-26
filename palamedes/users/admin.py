@@ -9,19 +9,20 @@ class ChapterAdmin(admin.ModelAdmin):
     search_fields = ('name', 'university')
 
 # Register the CustomUser model
-# We inherit from UserAdmin so we keep the password hashing functionality
+# Inherited from UserAdmin = keep the password hashing functionality
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
-    # This controls what you see in the list of users
+    # What I see in the user list view
     list_display = ('username', 'email', 'chapter', 'role', 'is_staff')
     list_filter = ('chapter', 'role', 'is_staff')
     
-    # This controls what fields you see when editing a user
+    # Controls what fields I see when editing a user
     fieldsets = UserAdmin.fieldsets + (
+        ('Profile Picture', {'fields': ('image',)}),
         ('Fraternity Info', {'fields': ('chapter', 'role', 'major', 'phone_number', 'hometown', 'bio')}),
     )
     
-    # This controls what fields you see when CREATING a new user in admin
+    # Controls what fields I see when creating a user
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Fraternity Info', {'fields': ('chapter', 'role', 'major', 'phone_number', 'hometown', 'bio')}),
     )

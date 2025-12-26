@@ -32,6 +32,9 @@ class CustomUser(AbstractUser):
     phone_number = models.CharField(max_length=15, blank=True)
     hometown = models.CharField(max_length=100, blank=True)
     bio = models.TextField(blank=True, max_length=500)
+
+    # Profile representation
+    image = models.ImageField(upload_to='profile_pics/', default='default.jpg')
     
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"

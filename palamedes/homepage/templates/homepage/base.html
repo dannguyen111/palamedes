@@ -35,6 +35,8 @@
                         <span class="nav-link text-white">Hello, {{ user.username }}</span>
                     </li>
                     <li class="nav-item">
+                        <a class="btn btn-outline-light ml-2" href="{% url 'profile' %}">Profile</a>
+                    <li class="nav-item">
                         <form action="{% url 'logout' %}" method="post" class="form-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-link nav-link">Logout</button>
