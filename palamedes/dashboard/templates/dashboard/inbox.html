@@ -1,0 +1,65 @@
+{% extends "homepage/base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <h2>Point Request Inbox</h2>
+    </div>
+</div>
+
+{% if my_action_items or exec_queue %}
+<div class="card shadow mb-5">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">⚠️ Action Required</h5>
+    </div>
+    <div class="list-group list-group-flush">
+
+        {% for point in my_action_items %}
+        {% include "dashboard/partials/point_row.html" with point=point queue_type="direct" %}
+        {% endfor %}
+
+        {% for point in exec_queue %}
+        {% include "dashboard/partials/point_row.html" with point=point queue_type="exec" %}
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="alert alert-success text-center">
+    All caught up! No pending requests.
+</div>
+{% endif %}
+
+{% if active_history %}
+<div class="card shadow">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">📜 Recent Active History</h5>
+    </div>
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Member</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for point in active_history %}
+            <tr>
+                <td>{{ point.submitted_by.username }}</td>
+                <td>{{ point.amount }}</td>
+                <td>
+                    {% if point.status == 'APPROVED' %}
+                    <span class="badge badge-success">Approved</span>
+                    {% elif point.status == 'REJECTED' %}
+                    <span class="badge badge-danger">Rejected</span>
+                    {% endif %}
+                </td>
+                <td>{{ point.date_submitted|date:"M d" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -93,9 +93,29 @@
                 <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
             </div>
             <div class="card-body">
-                <a href="#" class="btn btn-primary btn-block mb-3">Log House Points</a>
-                <a href="#" class="btn btn-success btn-block mb-3">Pay Dues</a>
-                <a href="#" class="btn btn-info btn-block">Brother Directory</a>
+
+                <a href="{% url 'submit_points' %}" class="btn btn-primary btn-block mb-3">
+                    <i class="fas fa-plus-circle"></i> Log House Points
+                </a>
+
+                <a href="{% url 'inbox' %}" class="btn btn-warning btn-block mb-3">
+                    <i class="fas fa-inbox"></i> Point Requests / Inbox
+                </a>
+
+                {% if user.role != 'NM' %}
+                <a href="{% url 'assign_points' %}" class="btn btn-dark btn-block mb-3">
+                    <i class="fas fa-bolt"></i> Assign Points to NM
+                </a>
+                {% endif %}
+
+                <a href="#" class="btn btn-success btn-block mb-3">
+                    <i class="fas fa-money-bill-wave"></i> Pay Dues
+                </a>
+
+                <a href="#" class="btn btn-info btn-block">
+                    <i class="fas fa-users"></i> Brother Directory
+                </a>
+
             </div>
         </div>
     </div>

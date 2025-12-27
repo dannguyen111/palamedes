@@ -1,0 +1,45 @@
+<div class="list-group-item d-flex justify-content-between align-items-center">
+    <div>
+        <h5 class="mb-1">
+            {% if point.status == 'COUNTERED' %}
+            <span class="badge badge-warning">Counter-Offer</span>
+            {% endif %}
+            {{ point.submitted_by.first_name }} {{ point.submitted_by.last_name }}
+            <small class="text-muted">requested {{ point.amount }} pts</small>
+        </h5>
+        <p class="mb-1">{{ point.description }}</p>
+        <small class="text-muted">Date: {{ point.date_for }} | Feedback: {{ point.feedback|default:"None" }}</small>
+    </div>
+
+    <div class="btn-group">
+        <form action="{% url 'manage_point' point.id %}" method="POST" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="approve">
+            <button type="submit" class="btn btn-success btn-sm mr-1">Approve</button>
+        </form>
+
+        <form action="{% url 'manage_point' point.id %}" method="POST" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reject">
+            <button type="submit" class="btn btn-danger btn-sm mr-1">Reject</button>
+        </form>
+
+        <button class="btn btn-warning btn-sm" type="button" data-toggle="collapse"
+            data-target="#counterBox{{ point.id }}">
+            Counter
+        </button>
+    </div>
+</div>
+
+<div class="collapse bg-light p-3 border-bottom" id="counterBox{{ point.id }}">
+    <form action="{% url 'manage_point' point.id %}" method="POST" class="form-inline">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="counter">
+        <label class="mr-2">New Amount:</label>
+        <input type="number" name="new_amount" value="{{ point.amount }}" class="form-control form-control-sm mr-2"
+            style="width: 80px;">
+        <input type="text" name="feedback" placeholder="Reason for change..." class="form-control form-control-sm mr-2"
+            style="width: 60%;">
+        <button type="submit" class="btn btn-primary btn-sm">Send Counter</button>
+    </form>
+</div>
