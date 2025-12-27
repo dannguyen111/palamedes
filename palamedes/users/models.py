@@ -1,6 +1,7 @@
 # users/models.py
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from PIL import Image
 
 class Chapter(models.Model):
     name = models.CharField(max_length=100, help_text="e.g. Theta Chi")
@@ -38,3 +39,13 @@ class CustomUser(AbstractUser):
     
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
+    
+    def save(self):
+        super().save()
+
+        # resize image
+        img = Image.open(self.image.path)
+        if img.height > 300 or img.width > 300:
+            output_size = (300, 300)
+            img.thumbnail(output_size)
+            img.save(self.image.path)
