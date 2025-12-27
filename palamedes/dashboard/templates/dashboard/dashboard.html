@@ -1,0 +1,99 @@
+{% extends "homepage/base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2 class="text-secondary">Dashboard <small class="text-muted" style="font-size: 0.6em;">{{ user.chapter.name
+                }}</small></h2>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-left-primary h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">House Points</div>
+                        <div class="h3 mb-0 font-weight-bold text-gray-800">{{ total_points }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <span style="font-size: 2em;">🏆</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-left-danger h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Dues Balance</div>
+                        <div class="h3 mb-0 font-weight-bold text-gray-800">${{ dues_balance }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <span style="font-size: 2em;">💰</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-left-warning h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Tasks</div>
+                        <div class="h3 mb-0 font-weight-bold text-gray-800">{{ pending_tasks_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <span style="font-size: 2em;">📋</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-white">
+                <h6 class="m-0 font-weight-bold text-primary">Chapter Announcements</h6>
+            </div>
+            <div class="card-body">
+                {% if announcements %}
+                {% for post in announcements %}
+                <div class="mb-4">
+                    <h5>{{ post.title }}</h5>
+                    <p class="text-muted small">
+                        Posted by {{ post.author.first_name }} on {{ post.date_posted|date:"F d, Y" }}
+                    </p>
+                    <p>{{ post.content }}</p>
+                    <hr>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted text-center">No announcements yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-white">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <a href="#" class="btn btn-primary btn-block mb-3">Log House Points</a>
+                <a href="#" class="btn btn-success btn-block mb-3">Pay Dues</a>
+                <a href="#" class="btn btn-info btn-block">Brother Directory</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
