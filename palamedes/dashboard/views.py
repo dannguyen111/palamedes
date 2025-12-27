@@ -12,6 +12,9 @@ def dashboard(request):
     # Calculate Total Approved Points
     points_data = HousePoint.objects.filter(user=user, status='APPROVED').aggregate(Sum('amount'))
     total_points = points_data['amount__sum'] or 0 
+
+    pending_data = HousePoint.objects.filter(user=user, status='PENDING').aggregate(Sum('amount'))
+    pending_points = pending_data['amount__sum'] or 0
     
     # Calculate Total Dues Owed
     dues_data = Due.objects.filter(assigned_to=user, is_paid=False).aggregate(Sum('amount'))
@@ -93,8 +96,7 @@ def inbox(request):
     user = request.user
     chapter = user.chapter
 
-    # Direct Requests: Assigned specifically to YOU (e.g. NM asking an Active)
-    # OR Requests YOU submitted that were Countered (you need to accept/reject the counter)
+    # My Action Items
     my_action_items = HousePoint.objects.filter(
         chapter=chapter
     ).filter(
@@ -102,27 +104,29 @@ def inbox(request):
         Q(submitted_by=user, status='COUNTERED')
     ).order_by('-date_submitted')
 
-    # Exec Queue: Requests from Actives (assigned_approver is None)
+    # Exec Queue
     exec_queue = []
     if user.role in ['PRES', 'VPRES']:
         exec_queue = HousePoint.objects.filter(
             chapter=chapter,
-            assigned_approver__isnull=True, # No specific person assigned
+            assigned_approver__isnull=True,
             status='PENDING'
-        ).exclude(submitted_by=user) # Don't show my own requests here
+        ).exclude(submitted_by=user)
 
-    # History/Watchlist: Recent Active Requests (Read-Only for Actives)
-    active_history = []
-    if user.role != 'NM':
-        active_history = HousePoint.objects.filter(
-            chapter=chapter,
-            submitted_by__role__in=['ACT', 'EXEC', 'PRES', 'VPRES', 'FIN', 'NME']
-        ).exclude(status='PENDING').order_by('-date_submitted')[:10]
+    # HISTORY: All requests involving me (Sender, Recipient, or Approver)
+    # Filter: "Show every active, pending, rejected request... that involves the active user"
+    history_qs = HousePoint.objects.filter(
+        chapter=chapter
+    ).filter(
+        Q(user=user) |                 # I am the recipient
+        Q(submitted_by=user) |         # I submitted it
+        Q(assigned_approver=user)      # I approved/rejected/am assigned to it
+    ).order_by('-updated_at')          # Sort by last action date
 
     context = {
         'my_action_items': my_action_items,
         'exec_queue': exec_queue,
-        'active_history': active_history
+        'history': history_qs
     }
     return render(request, 'dashboard/inbox.html', context)
 
@@ -146,12 +150,14 @@ def manage_point_request(request, pk):
         if action == 'approve':
             point.status = 'APPROVED'
             point.feedback = feedback
+            point.assigned_approver = request.user 
             point.save()
             messages.success(request, f"Request approved for {point.amount} points.")
 
         elif action == 'reject':
             point.status = 'REJECTED'
             point.feedback = feedback
+            point.assigned_approver = request.user
             point.save()
             messages.warning(request, "Request rejected.")
 

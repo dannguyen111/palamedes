@@ -20,6 +20,13 @@
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">House Points</div>
                         <div class="h3 mb-0 font-weight-bold text-gray-800">{{ total_points }}</div>
+
+                        {% if pending_points > 0 %}
+                        <div class="mt-1 text-muted small">
+                            <i class="fas fa-clock"></i> {{ pending_points }} Pending
+                        </div>
+                        {% endif %}
+
                     </div>
                     <div class="col-auto">
                         <span style="font-size: 2em;">🏆</span>

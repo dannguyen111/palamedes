@@ -32,6 +32,8 @@ class HousePoint(models.Model):
     
     # For the negotiation loop
     feedback = models.TextField(blank=True, help_text="Reason for rejection or counter-offer details.")
+    
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.amount} - {self.get_status_display()}"

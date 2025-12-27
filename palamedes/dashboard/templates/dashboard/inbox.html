@@ -29,37 +29,65 @@
 </div>
 {% endif %}
 
-{% if active_history %}
-<div class="card shadow">
+{% if history %}
+<div class="card shadow mt-4">
     <div class="card-header bg-secondary text-white">
-        <h5 class="mb-0">📜 Recent Active History</h5>
+        <h5 class="mb-0">📜 My History Log</h5>
     </div>
-    <table class="table table-hover mb-0">
-        <thead>
-            <tr>
-                <th>Member</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for point in active_history %}
-            <tr>
-                <td>{{ point.submitted_by.username }}</td>
-                <td>{{ point.amount }}</td>
-                <td>
-                    {% if point.status == 'APPROVED' %}
-                    <span class="badge badge-success">Approved</span>
-                    {% elif point.status == 'REJECTED' %}
-                    <span class="badge badge-danger">Rejected</span>
-                    {% endif %}
-                </td>
-                <td>{{ point.date_submitted|date:"M d" }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="thead-light">
+                <tr>
+                    <th>Recipient</th>
+                    <th>Approved By</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date Requested</th>
+                    <th>Last Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for point in history %}
+                <tr>
+                    <td class="font-weight-bold">
+                        {% if point.user == user %}
+                        <span class="text-primary">Me</span>
+                        {% else %}
+                        {{ point.user.first_name }} {{ point.user.last_name }}
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if point.assigned_approver %}
+                        {{ point.assigned_approver.first_name }} {{ point.assigned_approver.last_name }}
+                        {% elif point.status == 'APPROVED' and point.submitted_by != point.user %}
+                        {{ point.submitted_by.first_name }} (Direct)
+                        {% else %}
+                        <span class="text-muted font-italic">Pending Exec</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ point.amount }}</td>
+
+                    <td>
+                        {% if point.status == 'APPROVED' %}
+                        <span class="badge badge-success">Approved</span>
+                        {% elif point.status == 'REJECTED' %}
+                        <span class="badge badge-danger">Rejected</span>
+                        {% elif point.status == 'PENDING' %}
+                        <span class="badge badge-secondary">Pending</span>
+                        {% elif point.status == 'COUNTERED' %}
+                        <span class="badge badge-warning">Countered</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ point.date_submitted|date:"M d" }}</td>
+                    <td>{{ point.updated_at|date:"M d, H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endif %}
 {% endblock %}
