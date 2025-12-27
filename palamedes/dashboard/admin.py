@@ -3,8 +3,9 @@ from .models import HousePoint, Due, Task, Announcement
 
 @admin.register(HousePoint)
 class HousePointAdmin(admin.ModelAdmin):
-    list_display = ('user', 'amount', 'reason', 'approved', 'date_submitted')
-    list_filter = ('approved', 'user__chapter') # Filter by chapter!
+    list_display = ('user', 'amount', 'status', 'submitted_by', 'assigned_approver', 'date_submitted')
+    list_filter = ('status', 'chapter')
+    search_fields = ('user__username', 'description')
 
 @admin.register(Due)
 class DueAdmin(admin.ModelAdmin):

@@ -2,17 +2,39 @@
 from django.db import models
 from django.conf import settings
 from users.models import Chapter
+from django.utils import timezone
 
 class HousePoint(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='points')
-    amount = models.IntegerField()
-    reason = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    date_submitted = models.DateTimeField(auto_now_add=True)
-    approved = models.BooleanField(default=False)
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending Approval'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+        ('COUNTERED', 'Counter-Offer Made'),
+    ]
+
+    # Who is this point for?
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='points_received')
+    chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name='house_points', null=True)
     
+    # Who submitted it?
+    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='points_submitted', null=True)
+    
+    # Who needs to approve this?
+    # If Null, "Any Exec" can approve it (for Active requests)
+    assigned_approver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='points_to_approve')
+    
+    amount = models.IntegerField()
+    description = models.CharField(max_length=200)
+    date_for = models.DateField(default=timezone.now, help_text="When did this happen?")
+    date_submitted = models.DateTimeField(auto_now_add=True)
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    
+    # For the negotiation loop
+    feedback = models.TextField(blank=True, help_text="Reason for rejection or counter-offer details.")
+
     def __str__(self):
-        return f"{self.user.username} - {self.amount} pts"
+        return f"{self.user.username} - {self.amount} - {self.get_status_display()}"
 
 class Due(models.Model):
     title = models.CharField(max_length=100) # e.g. "Fall 2025 Dues"
