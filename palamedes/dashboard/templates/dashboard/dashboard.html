@@ -3,8 +3,12 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-12">
-        <h2 class="text-secondary">Dashboard <small class="text-muted" style="font-size: 0.6em;">{{ user.chapter.name
-                }}</small></h2>
+        <h2 class="text-secondary">
+            Dashboard
+            {% if user.chapter %}
+            <small class="text-muted" style="font-size: 0.6em;">{{ user.chapter.name }}</small>
+            {% endif %}
+        </h2>
     </div>
 </div>
 
