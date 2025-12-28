@@ -2,8 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q
+from django.db.models.functions import Coalesce
 from .models import HousePoint, Due, Task, Announcement
 from .forms import NMPointRequestForm, ActivePointRequestForm, DirectPointAssignmentForm
+from users.models import CustomUser
 
 @login_required
 def dashboard(request):
@@ -183,3 +185,37 @@ def manage_point_request(request, pk):
                 messages.error(request, "Invalid amount for counter-offer.")
 
     return redirect('inbox')
+
+@login_required
+def chapter_ledger(request):
+    user = request.user
+    chapter = user.chapter
+
+    # Leaderboards (Group by User, Sum Amount)
+    # We only count APPROVED points
+    leaderboard_data = CustomUser.objects.filter(chapter=chapter).annotate(
+        total_points=Coalesce(
+            Sum('points_received__amount', filter=Q(points_received__status='APPROVED')),
+            0
+        )
+    ).order_by('-total_points')
+
+    # Separate into two lists in Python
+    active_leaderboard = [u for u in leaderboard_data if u.role != 'NM']
+    nm_leaderboard = [u for u in leaderboard_data if u.role == 'NM']
+
+    # Mother Log (Every request ever)
+    # Only Actives can see the full log
+    full_log = []
+    if user.role != 'NM':
+        full_log = HousePoint.objects.filter(chapter=chapter).order_by('-date_submitted')
+    # NM can see NM logs
+    else:
+        full_log = HousePoint.objects.filter(chapter=chapter, user__role='NM').order_by('-date_submitted')
+
+    context = {
+        'active_leaderboard': active_leaderboard,
+        'nm_leaderboard': nm_leaderboard,
+        'full_log': full_log
+    }
+    return render(request, 'dashboard/ledger.html', context)

@@ -7,4 +7,5 @@ urlpatterns = [
     path('points/assign/', views.assign_points, name='assign_points'),
     path('inbox/', views.inbox, name='inbox'),
     path('points/manage/<int:pk>/', views.manage_point_request, name='manage_point'),
+    path('ledger/', views.chapter_ledger, name='chapter_ledger'),
 ]

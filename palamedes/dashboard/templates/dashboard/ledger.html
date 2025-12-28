@@ -1,0 +1,96 @@
+{% extends "homepage/base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Chapter Ledger & Leaderboards</h2>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">🐣 New Member Leaderboard</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for entry in nm_leaderboard %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>
+                        <strong>#{{ forloop.counter }}</strong> {{ entry.first_name }} {{ entry.last_name }}
+                    </span>
+                    <span class="badge badge-primary badge-pill">{{ entry.total_points }} pts</span>
+                </li>
+                {% empty %}
+                <li class="list-group-item">No points logged yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    {% if user.role != 'NM' %}
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">⚔️ Active Leaderboard</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for entry in active_leaderboard %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>
+                        <strong>#{{ forloop.counter }}</strong> {{ entry.first_name }} {{ entry.last_name }}
+                    </span>
+                    <span class="badge badge-dark badge-pill">{{ entry.total_points }} pts</span>
+                </li>
+                {% empty %}
+                <li class="list-group-item">No points logged yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if user.role != 'NM' %}
+<div class="card shadow">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">The Mother Log (All Requests)</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Recipient</th>
+                    <th>Submitted By</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for point in full_log %}
+                <tr>
+                    <td>{{ point.user.first_name }} {{ point.user.last_name }}</td>
+                    <td>{{ point.submitted_by.first_name }} {{ point.submitted_by.last_name }}</td>
+                    <td>{{ point.description }}</td>
+                    <td>{{ point.amount }}</td>
+                    <td>
+                        {% if point.status == 'APPROVED' %}
+                        <span class="text-success">Approved</span>
+                        {% elif point.status == 'REJECTED' %}
+                        <span class="text-danger">Rejected</span>
+                        {% else %}
+                        <span class="text-warning">{{ point.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ point.date_submitted|date:"M d" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
