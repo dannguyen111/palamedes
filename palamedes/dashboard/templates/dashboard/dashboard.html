@@ -16,6 +16,9 @@
     <div class="col-md-4">
         <div class="card shadow-sm border-left-primary h-100 py-2">
             <div class="card-body">
+                <div>
+                    <a href="{% url 'points_hub' %}" class="stretched-link"></a>
+                </div>
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">House Points</div>
@@ -26,12 +29,6 @@
                             <i class="fas fa-clock"></i> {{ pending_points }} Pending
                         </div>
                         {% endif %}
-
-                        <div class="mt-2">
-                            <a href="{% url 'chapter_ledger' %}" class="small font-weight-bold text-primary">
-                                View Leaderboard <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
 
                     </div>
                     <div class="col-auto">
@@ -45,6 +42,9 @@
     <div class="col-md-4">
         <div class="card shadow-sm border-left-danger h-100 py-2">
             <div class="card-body">
+                <div>
+                    <a href="{% url 'dues_dashboard' %}" class="stretched-link"></a>
+                </div>
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Dues Balance</div>

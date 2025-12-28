@@ -25,16 +25,14 @@
                 <div class="row align-items-center">
                     <div class="col">
                         <h5 class="text-muted text-uppercase mb-1">Current Balance Due</h5>
-                        {% with total=0 %}
-                        {% for due in my_dues %}{% endfor %}
+
                         <h1 class="font-weight-bold text-danger">
-                            {% if my_dues %}
-                            See Below
-                            {% else %}
-                            $0.00
-                            {% endif %}
+                            ${{ total_due }}
                         </h1>
-                        {% endwith %}
+
+                        {% if total_due == 0 %}
+                        <span class="badge badge-success">Paid in Full</span>
+                        {% endif %}
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-file-invoice-dollar fa-4x text-gray-300"></i>

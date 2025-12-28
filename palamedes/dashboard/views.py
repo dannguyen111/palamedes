@@ -232,14 +232,17 @@ def dues_dashboard(request):
     # Security: Only Treasurer/Exec can see the management tools
     is_treasurer = user.role in ['FIN']
     
-    # 1. My Personal Bill
+    # My Personal Bill
     my_dues = Due.objects.filter(assigned_to=user, is_paid=False).order_by('due_date')
     my_history = Due.objects.filter(assigned_to=user, is_paid=True).order_by('-due_date')
+
+    total_due = my_dues.aggregate(Sum('amount'))['amount__sum'] or 0
     
     context = {
         'my_dues': my_dues,
         'my_history': my_history,
-        'is_treasurer': is_treasurer
+        'is_treasurer': is_treasurer,
+        'total_due': total_due
     }
     return render(request, 'dashboard/dues_dashboard.html', context)
 
