@@ -61,7 +61,7 @@
             <thead>
                 <tr>
                     <th>Recipient</th>
-                    <th>Submitted By</th>
+                    <th>Approved By</th>
                     <th>Description</th>
                     <th>Amount</th>
                     <th>Status</th>
@@ -72,7 +72,7 @@
                 {% for point in full_log %}
                 <tr>
                     <td>{{ point.user.first_name }} {{ point.user.last_name }}</td>
-                    <td>{{ point.submitted_by.first_name }} {{ point.submitted_by.last_name }}</td>
+                    <td>{{ point.assigned_approver.first_name }} {{ point.assigned_approver.last_name }}</td>
                     <td>{{ point.description }}</td>
                     <td>{{ point.amount }}</td>
                     <td>
