@@ -1,0 +1,109 @@
+{% extends "homepage/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2 class="text-secondary">
+            <a href="{% url 'dues_dashboard' %}" class="text-secondary"><i class="fas fa-arrow-left"></i></a>
+            Treasurer Console
+        </h2>
+        <p class="text-muted">Issue charges, assign scholarships, or create mass bills.</p>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="duesTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="single-tab" data-toggle="tab" href="#single" role="tab">
+                    <i class="fas fa-user"></i> Single Transaction
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="bulk-tab" data-toggle="tab" href="#bulk" role="tab">
+                    <i class="fas fa-users"></i> Bulk / Mass Charge
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card-body">
+        <div class="tab-content" id="duesTabsContent">
+
+            <div class="tab-pane fade show active" id="single" role="tabpanel">
+                <h5 class="text-primary mb-3">Individual Charge or Scholarship</h5>
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="submit_single" value="1">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ single_form.title|as_crispy_field }}
+                            {{ single_form.assigned_to|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ single_form.amount|as_crispy_field }}
+                            {{ single_form.due_date|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-12 p-3 bg-light rounded border">
+                            <label><strong>Transaction Type:</strong></label>
+                            {{ single_form.type }}
+                            <small class="text-muted d-block mt-2">
+                                * "Charge" will create a debt (Positive amount).<br>
+                                * "Scholarship/Aid" will create a credit (Negative amount) that reduces their total
+                                balance.
+                            </small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block mt-4">Create Transaction</button>
+                </form>
+            </div>
+
+            <div class="tab-pane fade" id="bulk" role="tabpanel">
+                <h5 class="text-danger mb-3">Mass Assignment</h5>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> This will create a charge for <strong>multiple
+                        people</strong> at once. Use with caution.
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="submit_bulk" value="1">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ bulk_form.title|as_crispy_field }}
+                            {{ bulk_form.target_group|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ bulk_form.amount|as_crispy_field }}
+                            {{ bulk_form.due_date|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h6 class="text-secondary">Pledge Class Filter (Optional)</h6>
+                    <p class="small text-muted">Only fill this out if you selected "Specific Pledge Class" above.</p>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ bulk_form.pledge_semester|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ bulk_form.pledge_year|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger btn-block mt-4">Execute Mass Charge</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

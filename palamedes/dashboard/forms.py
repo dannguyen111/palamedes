@@ -1,5 +1,5 @@
 from django import forms
-from .models import HousePoint
+from .models import HousePoint, Due
 from users.models import CustomUser
 
 class DateInput(forms.DateInput):
@@ -50,3 +50,56 @@ class DirectPointAssignmentForm(forms.ModelForm):
             role='NM'
         )
         self.fields['user'].label = "Assign to New Member"
+
+class SingleDueForm(forms.ModelForm):
+    # We add a "Type" field to help the UI, though it saves to 'amount'
+    TRANSACTION_TYPES = [
+        ('CHARGE', 'Charge (Bill)'),
+        ('AID', 'Scholarship/Aid (Credit)'),
+    ]
+    type = forms.ChoiceField(choices=TRANSACTION_TYPES, widget=forms.RadioSelect, initial='CHARGE')
+
+    class Meta:
+        model = Due
+        fields = ['title', 'amount', 'due_date', 'assigned_to']
+        widgets = {
+            'due_date': DateInput(),
+        }
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show members of my chapter
+        self.fields['assigned_to'].queryset = CustomUser.objects.filter(chapter=user.chapter)
+        self.fields['assigned_to'].required = True
+
+    def clean(self):
+        cleaned_data = super().clean()
+        t_type = cleaned_data.get('type')
+        amount = cleaned_data.get('amount')
+
+        if amount:
+            # If it's AID, make sure amount is negative
+            if t_type == 'AID':
+                cleaned_data['amount'] = -abs(amount)
+            # If it's CHARGE, make sure amount is positive
+            else:
+                cleaned_data['amount'] = abs(amount)
+        return cleaned_data
+
+# Bulk Charge Form
+class BulkDueForm(forms.Form):
+    title = forms.CharField(max_length=100)
+    amount = forms.DecimalField(decimal_places=2)
+    due_date = forms.DateField(widget=DateInput())
+    
+    TARGET_CHOICES = [
+        ('ALL', 'Everyone in Chapter'),
+        ('ACTIVES', 'All Actives'),
+        ('NMS', 'All New Members'),
+        ('PLEDGE_CLASS', 'Specific Pledge Class'),
+    ]
+    target_group = forms.ChoiceField(choices=TARGET_CHOICES)
+
+    # Optional fields for Pledge Class
+    pledge_semester = forms.ChoiceField(choices=[('Fall', 'Fall'), ('Spring', 'Spring')], required=False)
+    pledge_year = forms.IntegerField(required=False, help_text="Required if Pledge Class is selected")

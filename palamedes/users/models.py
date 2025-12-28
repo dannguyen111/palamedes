@@ -36,6 +36,13 @@ class CustomUser(AbstractUser):
 
     # Profile representation
     image = models.ImageField(upload_to='profile_pics/', default='default.jpg')
+
+    SEMESTER_CHOICES = [
+        ('Fall', 'Fall'),
+        ('Spring', 'Spring'),
+    ]
+    pledge_semester = models.CharField(max_length=10, choices=SEMESTER_CHOICES, blank=True, null=True)
+    pledge_year = models.IntegerField(blank=True, null=True, help_text="e.g. 2025")
     
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"

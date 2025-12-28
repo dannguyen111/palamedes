@@ -1,0 +1,105 @@
+{% extends "homepage/base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2 class="text-secondary">
+            <a href="{% url 'dashboard' %}" class="text-secondary"><i class="fas fa-arrow-left"></i></a>
+            My Financials
+        </h2>
+    </div>
+
+    {% if is_treasurer %}
+    <div class="col-md-4 text-right">
+        <a href="{% url 'manage_dues_creation' %}" class="btn btn-dark">
+            <i class="fas fa-cog"></i> Manage Dues & Aid
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-12">
+        <div class="card shadow border-left-danger">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h5 class="text-muted text-uppercase mb-1">Current Balance Due</h5>
+                        {% with total=0 %}
+                        {% for due in my_dues %}{% endfor %}
+                        <h1 class="font-weight-bold text-danger">
+                            {% if my_dues %}
+                            See Below
+                            {% else %}
+                            $0.00
+                            {% endif %}
+                        </h1>
+                        {% endwith %}
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-file-invoice-dollar fa-4x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-circle"></i> Unpaid Charges</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for due in my_dues %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">{{ due.title }}</h6>
+                        <small class="text-muted">Due: {{ due.due_date }}</small>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-weight-bold text-danger">${{ due.amount }}</span>
+
+                        {% if is_treasurer %}
+                        <a href="{% url 'pay_due' due.id %}" class="btn btn-sm btn-outline-success ml-2">Mark Paid</a>
+                        {% else %}
+                        <button class="btn btn-sm btn-outline-secondary ml-2" disabled>Unpaid</button>
+                        {% endif %}
+                    </div>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-center text-muted">You are all paid up!</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Payment & Aid History</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for item in my_history %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">{{ item.title }}</h6>
+                        <small class="text-muted">Cleared: {{ item.due_date }}</small>
+                    </div>
+
+                    {% if item.amount < 0 %} <span class="badge badge-info badge-pill">Scholarship/Aid</span>
+                        <span class="text-success font-weight-bold">${{ item.amount|stringformat:"+d" }}</span> {% else
+                        %}
+                        <span class="text-muted" style="text-decoration: line-through;">${{ item.amount }}</span>
+                        <span class="badge badge-success">Paid</span>
+                        {% endif %}
+                </li>
+                {% empty %}
+                <li class="list-group-item text-center text-muted">No history yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

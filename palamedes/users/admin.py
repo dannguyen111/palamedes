@@ -12,17 +12,17 @@ class ChapterAdmin(admin.ModelAdmin):
 # Inherited from UserAdmin = keep the password hashing functionality
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
-    # What I see in the user list view
-    list_display = ('username', 'email', 'chapter', 'role', 'is_staff')
+    # List View Settings
+    list_display = ('username', 'email', 'first_name', 'last_name', 'chapter', 'role')
     list_filter = ('chapter', 'role', 'is_staff')
     
-    # Controls what fields I see when editing a user
+    # Edit User Settings (When changing an existing user)
     fieldsets = UserAdmin.fieldsets + (
-        ('Profile Picture', {'fields': ('image',)}),
-        ('Fraternity Info', {'fields': ('chapter', 'role', 'major', 'phone_number', 'hometown', 'bio')}),
+        ('Fraternity Info', {'fields': ('chapter', 'role', 'major', 'phone_number', 'hometown', 'bio', 'pledge_semester', 'pledge_year')}),
     )
     
-    # Controls what fields I see when creating a user
+    # Create User Settings (This is what you asked for)
     add_fieldsets = UserAdmin.add_fieldsets + (
-        ('Fraternity Info', {'fields': ('chapter', 'role', 'major', 'phone_number', 'hometown', 'bio')}),
+        ('Personal Info', {'fields': ('first_name', 'last_name', 'email')}),
+        ('Fraternity Info', {'fields': ('chapter', 'role', 'major', 'phone_number', 'hometown', 'bio', 'pledge_semester', 'pledge_year')}),
     )
