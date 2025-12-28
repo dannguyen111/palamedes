@@ -1,0 +1,61 @@
+{% extends "homepage/base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2 class="text-secondary">
+            <a href="{% url 'dashboard' %}" class="text-secondary"><i class="fas fa-arrow-left"></i></a>
+            House Points Portal
+        </h2>
+        <p class="text-muted">Select an action below.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100 border-left-primary">
+            <div class="card-body text-center">
+                <div class="mb-3 text-primary"><i class="fas fa-plus-circle fa-3x"></i></div>
+                <h4>Request Points</h4>
+                <p class="small text-muted">Submit a request for house points.</p>
+                <a href="{% url 'submit_points' %}" class="btn btn-primary btn-block stretched-link">Go</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100 border-left-info">
+            <div class="card-body text-center">
+                <div class="mb-3 text-info"><i class="fas fa-list-ol fa-3x"></i></div>
+                <h4>Leaderboard & Logs</h4>
+                <p class="small text-muted">View rankings and point history.</p>
+                <a href="{% url 'chapter_ledger' %}" class="btn btn-info btn-block stretched-link">View</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100 border-left-warning">
+            <div class="card-body text-center">
+                <div class="mb-3 text-warning"><i class="fas fa-inbox fa-3x"></i></div>
+                <h4>Active Point Requests</h4>
+                <p class="small text-muted">Manage pending requests and approvals.</p>
+                <a href="{% url 'inbox' %}" class="btn btn-warning btn-block stretched-link">Open Inbox</a>
+            </div>
+        </div>
+    </div>
+
+    {% if user.role != 'NM' %}
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100 border-left-dark">
+            <div class="card-body text-center">
+                <div class="mb-3 text-dark"><i class="fas fa-bolt fa-3x"></i></div>
+                <h4>Direct Assignment</h4>
+                <p class="small text-muted">Give/Take points directly (No Approval needed).</p>
+                <a href="{% url 'assign_points' %}" class="btn btn-dark btn-block stretched-link">Assign</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

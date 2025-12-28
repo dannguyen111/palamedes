@@ -219,3 +219,8 @@ def chapter_ledger(request):
         'full_log': full_log
     }
     return render(request, 'dashboard/ledger.html', context)
+
+@login_required
+def points_hub(request):
+    # Potentially pass 'pending_count' if we want to show badges on the menu
+    return render(request, 'dashboard/points_hub.html')

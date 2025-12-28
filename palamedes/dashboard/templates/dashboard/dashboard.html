@@ -107,23 +107,12 @@
             </div>
             <div class="card-body">
 
-                <a href="{% url 'chapter_ledger' %}" class="btn btn-info btn-block mb-3">
-                    <i class="fas fa-list-ol"></i> Leaderboards & Logs
+                <a href="{% url 'points_hub' %}" class="btn btn-primary btn-lg btn-block mb-3"
+                    style="height: 60px; line-height: 45px;">
+                    <i class="fas fa-trophy mr-2"></i> House Points System
                 </a>
 
-                <a href="{% url 'submit_points' %}" class="btn btn-primary btn-block mb-3">
-                    <i class="fas fa-plus-circle"></i> Log House Points
-                </a>
-
-                <a href="{% url 'inbox' %}" class="btn btn-warning btn-block mb-3">
-                    <i class="fas fa-inbox"></i> Point Requests / Inbox
-                </a>
-
-                {% if user.role != 'NM' %}
-                <a href="{% url 'assign_points' %}" class="btn btn-dark btn-block mb-3">
-                    <i class="fas fa-bolt"></i> Assign Points to NM
-                </a>
-                {% endif %}
+                <hr>
 
                 <a href="#" class="btn btn-success btn-block mb-3">
                     <i class="fas fa-money-bill-wave"></i> Pay Dues
