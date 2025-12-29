@@ -15,9 +15,11 @@
             </div>
             <ul class="list-group list-group-flush">
                 {% for entry in nm_leaderboard %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
+                <li
+                    class="list-group-item d-flex justify-content-between align-items-center {% if entry == user %}list-group-item-warning font-weight-bold border-warning{% endif %}">
                     <span>
                         <strong>#{{ forloop.counter }}</strong> {{ entry.first_name }} {{ entry.last_name }}
+                        {% if entry == user %} (You) {% endif %}
                     </span>
                     <span class="badge badge-primary badge-pill">{{ entry.total_points }} pts</span>
                 </li>
@@ -36,9 +38,11 @@
             </div>
             <ul class="list-group list-group-flush">
                 {% for entry in active_leaderboard %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
+                <li
+                    class="list-group-item d-flex justify-content-between align-items-center {% if entry == user %}list-group-item-warning font-weight-bold border-warning{% endif %}">
                     <span>
                         <strong>#{{ forloop.counter }}</strong> {{ entry.first_name }} {{ entry.last_name }}
+                        {% if entry == user %} (You) {% endif %}
                     </span>
                     <span class="badge badge-dark badge-pill">{{ entry.total_points }} pts</span>
                 </li>
@@ -71,8 +75,26 @@
             <tbody>
                 {% for point in full_log %}
                 <tr>
-                    <td>{{ point.user.first_name }} {{ point.user.last_name }}</td>
-                    <td>{{ point.assigned_approver.first_name }} {{ point.assigned_approver.last_name }}</td>
+                    <td>
+                        {% if point.user == user %}
+                        <strong>{{ point.user.first_name }} {{ point.user.last_name }}</strong>
+                        {% else %}
+                        {{ point.user.first_name }} {{ point.user.last_name }}
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if point.assigned_approver %}
+                        {% if point.assigned_approver == user %}
+                        <strong>You</strong>
+                        {% else %}
+                        {{ point.assigned_approver.first_name }} {{ point.assigned_approver.last_name }}
+                        {% endif %}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+
                     <td>{{ point.description }}</td>
                     <td>{{ point.amount }}</td>
                     <td>
