@@ -1,6 +1,14 @@
 {% extends "homepage/base.html" %}
 
 {% block content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <a href="{% url 'points_hub' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Back to Points Hub
+        </a>
+    </div>
+</div>
+
 <div class="row mb-4">
     <div class="col-md-12">
         <h2>Chapter Ledger & Leaderboards</h2>
@@ -77,7 +85,7 @@
                 <tr>
                     <td>
                         {% if point.user == user %}
-                        <strong>{{ point.user.first_name }} {{ point.user.last_name }}</strong>
+                        <span class="text-primary font-weight-bold">You</span>
                         {% else %}
                         {{ point.user.first_name }} {{ point.user.last_name }}
                         {% endif %}
@@ -86,7 +94,7 @@
                     <td>
                         {% if point.assigned_approver %}
                         {% if point.assigned_approver == user %}
-                        <strong>You</strong>
+                        <span class="text-primary font-weight-bold">You</span>
                         {% else %}
                         {{ point.assigned_approver.first_name }} {{ point.assigned_approver.last_name }}
                         {% endif %}
