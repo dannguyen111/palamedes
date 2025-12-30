@@ -337,3 +337,43 @@ def pay_due(request, pk):
         messages.error(request, "Only the Treasurer can verify payments.")
         
     return redirect('dues_dashboard')
+
+@login_required
+def directory(request):
+    user = request.user
+    chapter = request.user.chapter
+    members = CustomUser.objects.filter(chapter=chapter).order_by('role', 'last_name', 'first_name')
+
+    query = request.GET.get('q')
+    if query:
+        members = members.filter(
+            Q(first_name__icontains=query) | 
+            Q(last_name__icontains=query) |
+            Q(major__icontains=query) |
+            Q(hometown__icontains=query)
+        )
+
+    role_filter = request.GET.get('role')
+    if role_filter:
+        members = members.filter(role=role_filter)
+    
+    context = {
+        'members': members,
+        'search_query': query or ""
+    }
+    return render(request, 'dashboard/directory.html', context)
+
+@login_required
+def brother_profile(request, pk):
+    # Fetch the specific brother or show 404
+    brother = get_object_or_404(CustomUser, pk=pk)
+    
+    # Only allow viewing members of the SAME chapter
+    if brother.chapter != request.user.chapter:
+        messages.error(request, "You cannot view profiles from other chapters.")
+        return redirect('dashboard')
+
+    context = {
+        'brother': brother
+    }
+    return render(request, 'dashboard/brother_profile.html', context)

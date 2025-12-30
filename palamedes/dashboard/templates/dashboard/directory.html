@@ -1,0 +1,94 @@
+{% extends "homepage/base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2 class="text-secondary">
+            <a href="{% url 'dashboard' %}" class="text-secondary"><i class="fas fa-arrow-left"></i></a>
+            Brother Directory
+        </h2>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm p-3">
+            <form method="GET" class="form-inline justify-content-center">
+
+                <div class="input-group mb-2 mr-sm-2" style="width: 50%;">
+                    <div class="input-group-prepend">
+                        <div class="input-group-text"><i class="fas fa-search"></i></div>
+                    </div>
+                    <input type="text" name="q" class="form-control" placeholder="Search name, major, or hometown..."
+                        value="{{ search_query }}">
+                </div>
+
+                <select name="role" class="custom-select mb-2 mr-sm-2">
+                    <option value="">All Roles</option>
+                    <option value="ACT">Actives</option>
+                    <option value="NM">New Members</option>
+                    <option value="EXEC">Exec Board</option>
+                </select>
+
+                <button type="submit" class="btn btn-primary mb-2">Filter</button>
+
+                {% if search_query or request.GET.role %}
+                <a href="{% url 'brother_directory' %}" class="btn btn-outline-secondary mb-2 ml-2">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% for member in members %}
+    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+
+            <a href="{% url 'brother_profile' member.pk %}" class="stretched-link"></a>
+
+            <div class="text-center pt-4">
+                <img src="{{ member.image.url }}" class="rounded-circle img-thumbnail"
+                    style="width: 120px; height: 120px; object-fit: cover;">
+            </div>
+
+            <div class="card-body text-center">
+
+                <h5 class="card-title font-weight-bold mb-1">
+                    {{ member.first_name }} {{ member.last_name }}
+                </h5>
+
+                <span class="badge badge-pill 
+                {% if member.role == 'NM' %}badge-info
+                {% elif member.role == 'ACT' %}badge-dark
+                {% else %}badge-primary{% endif %} mb-2">
+                    {{ member.get_role_display }}
+                </span>
+
+                <p class="card-text text-muted small mb-1">
+                    <i class="fas fa-graduation-cap"></i> {{ member.major|default:"Undeclared" }}
+                </p>
+            </div>
+
+            <div class="card-footer bg-white border-top-0 pb-4 px-4">
+                <a href="mailto:{{ member.email }}" class="btn btn-outline-primary btn-block"
+                    style="position: relative; z-index: 2;">
+                    <i class="fas fa-envelope"></i> Email
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <h4 class="text-muted">No brothers found matching your search.</h4>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    .hover-card:hover {
+        transform: translateY(-5px);
+        transition: transform 0.2s;
+    }
+</style>
+{% endblock %}
