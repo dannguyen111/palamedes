@@ -223,7 +223,15 @@ def chapter_ledger(request):
 @login_required
 def points_hub(request):
     # Potentially pass 'pending_count' if we want to show badges on the menu
-    return render(request, 'dashboard/points_hub.html')
+    # include current points total
+    user = request.user
+    total_points = user.points_received.filter(status='APPROVED').aggregate(Sum('amount'))['amount__sum'] or 0
+
+    context = {
+        'total_points': total_points
+    }
+    
+    return render(request, 'dashboard/points_hub.html', context)
 
 @login_required
 def dues_dashboard(request):
