@@ -12,4 +12,5 @@ urlpatterns = [
     path('dues/', views.dues_dashboard, name='dues_dashboard'),
     path('dues/manage/', views.manage_dues_creation, name='manage_dues_creation'),
     path('dues/pay/<int:pk>/', views.pay_due, name='pay_due'),
+    path('directory/', views.directory, name='brother_directory'),
 ]

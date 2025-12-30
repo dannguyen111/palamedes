@@ -337,3 +337,28 @@ def pay_due(request, pk):
         messages.error(request, "Only the Treasurer can verify payments.")
         
     return redirect('dues_dashboard')
+
+@login_required
+def directory(request):
+    user = request.user
+    chapter = request.user.chapter
+    members = CustomUser.objects.filter(chapter=chapter).order_by('role', 'last_name', 'first_name')
+
+    query = request.GET.get('q')
+    if query:
+        members = members.filter(
+            Q(first_name__icontains=query) | 
+            Q(last_name__icontains=query) |
+            Q(major__icontains=query) |
+            Q(hometown__icontains=query)
+        )
+
+    role_filter = request.GET.get('role')
+    if role_filter:
+        members = members.filter(role=role_filter)
+    
+    context = {
+        'members': members,
+        'search_query': query or ""
+    }
+    return render(request, 'dashboard/directory.html', context)
