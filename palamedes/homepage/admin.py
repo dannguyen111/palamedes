@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import ChapterRequest
-from users.models import Chapter # Import the Chapter model from the users app
+from users.models import Chapter, Position
 import secrets # To generate the invite code
 
 def approve_requests(modeladmin, request, queryset):
@@ -21,11 +21,39 @@ def approve_requests(modeladmin, request, queryset):
             defaults={'invite_code': code}
         )
 
-        # 3. Mark request as approved
+        # Create default positions for the chapter
+        Position.objects.create(
+            chapter=chapter, title="President",
+            can_manage_roster=True, can_manage_finance=True, 
+            can_manage_points=True, can_manage_tasks=True, can_create_positions=True
+        )
+        
+        # Vice President: Can do everything EXCEPT create positions/change President
+        Position.objects.create(
+            chapter=chapter, title="Vice President",
+            can_manage_roster=True, can_manage_finance=False, 
+            can_manage_points=True, can_manage_tasks=True, can_create_positions=False
+        )
+
+        # Treasurer: Money only
+        Position.objects.create(
+            chapter=chapter, title="Treasurer",
+            can_manage_roster=False, can_manage_finance=True, 
+            can_manage_points=False, can_manage_tasks=False, can_create_positions=False
+        )
+
+        # No position
+        Position.objects.create(
+            chapter=chapter, title="No Position",
+            can_manage_roster=False, can_manage_finance=False, 
+            can_manage_points=False, can_manage_tasks=False, can_create_positions=False
+        )
+
+        # 4. Mark request as approved
         req.is_approved = True
         req.save()
 
-        # 4. Send the Email (Prints to Console)
+        # 5. Send the Email (Prints to Console)
         subject = f"Palamedes: {req.fraternity_name} at {req.university} is Approved."
         message = f"""
         Hello President,
