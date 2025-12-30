@@ -45,49 +45,35 @@
     <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
         <div class="card h-100 shadow-sm border-0 hover-card">
 
+            <a href="{% url 'brother_profile' member.pk %}" class="stretched-link"></a>
+
             <div class="text-center pt-4">
                 <img src="{{ member.image.url }}" class="rounded-circle img-thumbnail"
                     style="width: 120px; height: 120px; object-fit: cover;">
             </div>
 
             <div class="card-body text-center">
+
                 <h5 class="card-title font-weight-bold mb-1">
                     {{ member.first_name }} {{ member.last_name }}
                 </h5>
 
                 <span class="badge badge-pill 
-                    {% if member.role == 'NM' %}badge-info
-                    {% elif member.role == 'ACT' %}badge-dark
-                    {% else %}badge-primary{% endif %} mb-2">
+                {% if member.role == 'NM' %}badge-info
+                {% elif member.role == 'ACT' %}badge-dark
+                {% else %}badge-primary{% endif %} mb-2">
                     {{ member.get_role_display }}
                 </span>
 
                 <p class="card-text text-muted small mb-1">
                     <i class="fas fa-graduation-cap"></i> {{ member.major|default:"Undeclared" }}
                 </p>
-
-                {% if member.pledge_semester and member.pledge_year %}
-                <p class="card-text text-muted small mb-1">
-                    <i class="fas fa-users"></i> {{ member.pledge_semester }} {{ member.pledge_year }}
-                </p>
-                {% endif %}
-
-                {% if member.hometown %}
-                <p class="card-text text-muted small">
-                    <i class="fas fa-map-marker-alt"></i> {{ member.hometown }}
-                </p>
-                {% endif %}
             </div>
 
-            <div class="card-footer bg-white border-top-0 text-center pb-4">
-                <a href="mailto:{{ member.email }}" class="btn btn-sm btn-outline-primary" title="Email">
-                    <i class="fas fa-envelope"></i>
+            <div class="card-footer bg-white border-top-0 pb-4 px-4">
+                <a href="mailto:{{ member.email }}" class="btn btn-outline-primary btn-block">
+                    <i class="fas fa-envelope"></i> Email
                 </a>
-                {% if member.phone_number %}
-                <a href="tel:{{ member.phone_number }}" class="btn btn-sm btn-outline-success" title="Call">
-                    <i class="fas fa-phone"></i>
-                </a>
-                {% endif %}
             </div>
         </div>
     </div>

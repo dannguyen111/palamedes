@@ -362,3 +362,18 @@ def directory(request):
         'search_query': query or ""
     }
     return render(request, 'dashboard/directory.html', context)
+
+@login_required
+def brother_profile(request, pk):
+    # Fetch the specific brother or show 404
+    brother = get_object_or_404(CustomUser, pk=pk)
+    
+    # Only allow viewing members of the SAME chapter
+    if brother.chapter != request.user.chapter:
+        messages.error(request, "You cannot view profiles from other chapters.")
+        return redirect('dashboard')
+
+    context = {
+        'brother': brother
+    }
+    return render(request, 'dashboard/brother_profile.html', context)
