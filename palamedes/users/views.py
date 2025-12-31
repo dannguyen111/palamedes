@@ -9,8 +9,7 @@ def register(request):
         if form.is_valid():
             user = form.save()
             username = form.cleaned_data.get('username')
-            role = user.get_role_display()
-            messages.success(request, f'Account created for {username}! You are registered as: {role}')
+            messages.success(request, f'Account created for {username}')
             return redirect('login')
     else:
         form = CustomUserCreationForm()

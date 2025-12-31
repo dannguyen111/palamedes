@@ -18,7 +18,7 @@
 
                 <h3 class="font-weight-bold mb-1">{{ brother.first_name }} {{ brother.last_name }}</h3>
                 <div class="mb-3">
-                    <span class="badge badge-pill badge-primary px-3 py-2">{{ brother.get_role_display }}</span>
+                    <span class="badge badge-pill badge-primary px-3 py-2">{{ brother.get_status_display }}</span>
                 </div>
 
                 <hr>
@@ -64,7 +64,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <small class="text-muted text-uppercase font-weight-bold">Chapter Status</small>
-                            <h5 class="text-dark">{{ brother.get_role_display }}</h5>
+                            <h5 class="text-dark">{{ brother.get_status_display }}</h5>
                         </div>
                     </div>
 

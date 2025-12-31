@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser, Chapter
+from .models import CustomUser, Chapter, Position
 from homepage.models import ChapterRequest # To check the approved email
 
 class CustomUserCreationForm(UserCreationForm):
@@ -37,9 +37,11 @@ class CustomUserCreationForm(UserCreationForm):
                 president_email=user.email,
                 is_approved=True
             )
-            user.role = 'PRES'
+            user.position = Position.objects.get(chapter=chapter, title="President")
+            user.status = 'ACT'
         except ChapterRequest.DoesNotExist:
-            user.role = 'NM'
+            user.position = Position.objects.get(chapter=chapter, title="No Position")
+            user.status = 'NM'
 
         if commit:
             user.save()
