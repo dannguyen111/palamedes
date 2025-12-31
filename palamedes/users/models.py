@@ -21,7 +21,7 @@ class Position(models.Model):
     can_manage_finance = models.BooleanField(default=False, help_text="Can create dues and mark items as paid.")
     can_manage_points = models.BooleanField(default=False, help_text="Can approve/deny point requests.")
     can_manage_tasks = models.BooleanField(default=False, help_text="Can assign tasks to others.")
-    can_create_positions = models.BooleanField(default=False, help_text="Can create new officer roles (President only).")
+    can_create_positions = models.BooleanField(default=False, help_text="Can create new officer positions (President only).")
     
     def __str__(self):
         return f"{self.title} ({self.chapter.name})"
@@ -45,7 +45,7 @@ class CustomUser(AbstractUser):
     pledge_year = models.IntegerField(blank=True, null=True, help_text="e.g. 2025")
     
     def __str__(self):
-        if self.position: return f"{self.username} ({self.position.title})"
+        if self.position and self.position.title != "No Position": return f"{self.username} ({self.position.title})"
         return self.username
     
     def save(self, *args, **kwargs):

@@ -19,7 +19,7 @@ class NMPointRequestForm(forms.ModelForm):
         # Filter the dropdown: Only show Actives from the SAME chapter
         self.fields['assigned_approver'].queryset = CustomUser.objects.filter(
             chapter=user.chapter,
-            role__in=['ACT', 'EXEC', 'FIN', 'PRES', 'VPRES', 'NME']
+            status='ACT'
         )
         self.fields['assigned_approver'].label = "Request Approval From"
         self.fields['assigned_approver'].required = True
@@ -47,7 +47,7 @@ class DirectPointAssignmentForm(forms.ModelForm):
         # Only show New Members from the same chapter
         self.fields['user'].queryset = CustomUser.objects.filter(
             chapter=request_user.chapter,
-            role='NM'
+            status='NM'
         )
         self.fields['user'].label = "Assign to New Member"
 

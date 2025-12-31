@@ -23,16 +23,15 @@
                         value="{{ search_query }}">
                 </div>
 
-                <select name="role" class="custom-select mb-2 mr-sm-2">
-                    <option value="">All Roles</option>
+                <select name="status" class="custom-select mb-2 mr-sm-2">
+                    <option value="">All Statuses</option>
                     <option value="ACT">Actives</option>
                     <option value="NM">New Members</option>
-                    <option value="EXEC">Exec Board</option>
                 </select>
 
                 <button type="submit" class="btn btn-primary mb-2">Filter</button>
 
-                {% if search_query or request.GET.role %}
+                {% if search_query or request.GET.status %}
                 <a href="{% url 'brother_directory' %}" class="btn btn-outline-secondary mb-2 ml-2">Clear</a>
                 {% endif %}
             </form>
@@ -59,10 +58,10 @@
                 </h5>
 
                 <span class="badge badge-pill 
-                {% if member.role == 'NM' %}badge-info
-                {% elif member.role == 'ACT' %}badge-dark
+                {% if member.status == 'NM' %}badge-info
+                {% elif member.status == 'ACT' %}badge-dark
                 {% else %}badge-primary{% endif %} mb-2">
-                    {{ member.get_role_display }}
+                    {{ member.get_status_display }}
                 </span>
 
                 <p class="card-text text-muted small mb-1">

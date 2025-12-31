@@ -38,7 +38,7 @@
         </div>
     </div>
 
-    {% if user.role != 'NM' %}
+    {% if user.status != 'NM' %}
     <div class="col-md-6">
         <div class="card shadow">
             <div class="card-header bg-dark text-white">
@@ -63,7 +63,7 @@
     {% endif %}
 </div>
 
-{% if user.role != 'NM' %}
+{% if user.status != 'NM' %}
 <div class="card shadow">
     <div class="card-header bg-primary text-white">
         <h5 class="mb-0">The Mother Log (All Requests)</h5>

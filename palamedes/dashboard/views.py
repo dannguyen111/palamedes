@@ -44,15 +44,15 @@ def dashboard(request):
 def submit_points(request):
     user = request.user
     
-    # Determine which form to use based on Role
-    if user.role == 'NM':
+    # Determine which form to use based on Status
+    if user.status == 'NM':
         FormClass = NMPointRequestForm
     else:
         FormClass = ActivePointRequestForm
 
     if request.method == 'POST':
         # We pass 'user' to the form init so it can filter the dropdowns
-        form = FormClass(user, request.POST) if user.role == 'NM' else FormClass(request.POST)
+        form = FormClass(user, request.POST) if user.status == 'NM' else FormClass(request.POST)
         
         if form.is_valid():
             point_req = form.save(commit=False)
@@ -60,21 +60,21 @@ def submit_points(request):
             point_req.submitted_by = user     # I submitted it
             point_req.chapter = user.chapter  # Link to chapter
             
-            # If Active, no specific approver is set (implies Execs)
+            # If Active, no specific approver is set (whoever has the permission will handle)
             # If NM, the form already handled setting 'assigned_approver'
             
             point_req.save()
             messages.success(request, 'Point request submitted successfully!')
             return redirect('dashboard')
     else:
-        form = FormClass(user) if user.role == 'NM' else FormClass()
+        form = FormClass(user) if user.status == 'NM' else FormClass()
 
     return render(request, 'dashboard/submit_points.html', {'form': form})
 
 # View for Actives to give points to NMs directly
 @login_required
 def assign_points(request):
-    if request.user.role == 'NM':
+    if request.user.status == 'NM':
         messages.error(request, "You do not have permission to do that.")
         return redirect('dashboard')
 
@@ -108,7 +108,7 @@ def inbox(request):
 
     # Exec Queue
     exec_queue = []
-    if user.role in ['PRES', 'VPRES']:
+    if user.position.can_manage_points:
         exec_queue = HousePoint.objects.filter(
             chapter=chapter,
             assigned_approver__isnull=True,
@@ -138,10 +138,10 @@ def manage_point_request(request, pk):
     
     # Security: Ensure user is allowed to modify this
     is_approver = point.assigned_approver == request.user
-    is_exec = request.user.role in ['EXEC', 'PRES', 'VPRES', 'FIN', 'NME'] and point.assigned_approver is None
+    is_top2 = request.user.position.can_manage_points and point.assigned_approver is None
     is_owner_countering = point.submitted_by == request.user and point.status == 'COUNTERED'
 
-    if not (is_approver or is_exec or is_owner_countering):
+    if not (is_approver or is_top2 or is_owner_countering):
         messages.error(request, "You do not have permission to manage this request.")
         return redirect('inbox')
 
@@ -201,18 +201,17 @@ def chapter_ledger(request):
     ).order_by('-total_points')
 
     # Separate into two lists in Python
-    active_leaderboard = [u for u in leaderboard_data if u.role != 'NM']
-    nm_leaderboard = [u for u in leaderboard_data if u.role == 'NM']
+    active_leaderboard = [u for u in leaderboard_data if u.status == 'ACT']
+    nm_leaderboard = [u for u in leaderboard_data if u.status == 'NM']
 
     # Mother Log (Every request ever)
     # Only Actives can see the full log
     full_log = []
-    if user.role != 'NM':
+    if user.status != 'NM':
         full_log = HousePoint.objects.filter(chapter=chapter).order_by('-date_submitted')
     # NM can see NM logs
     else:
-        full_log = HousePoint.objects.filter(chapter=chapter, user__role='NM').order_by('-date_submitted')
-
+        full_log = HousePoint.objects.filter(chapter=chapter, user__status='NM').order_by('-date_submitted')
     context = {
         'active_leaderboard': active_leaderboard,
         'nm_leaderboard': nm_leaderboard,
@@ -237,8 +236,8 @@ def points_hub(request):
 def dues_dashboard(request):
     user = request.user
     
-    # Security: Only Treasurer/Exec can see the management tools
-    is_treasurer = user.role in ['FIN']
+    # Security: Only People with Managing dues permission can see Treasurer View
+    is_treasurer = user.position.can_manage_finance
     
     # My Personal Bill
     my_dues = Due.objects.filter(assigned_to=user, is_paid=False).order_by('due_date')
@@ -257,7 +256,7 @@ def dues_dashboard(request):
 @login_required
 def manage_dues_creation(request):
     # Security Check
-    if request.user.role not in ['FIN']:
+    if not request.user.position.can_manage_finance:
         messages.error(request, "Access Denied.")
         return redirect('dues_dashboard')
 
@@ -288,9 +287,9 @@ def manage_dues_creation(request):
                 if target == 'ALL':
                     users_to_charge = base_qs
                 elif target == 'ACTIVES':
-                    users_to_charge = base_qs.exclude(role='NM')
+                    users_to_charge = base_qs.exclude(status='NM')
                 elif target == 'NMS':
-                    users_to_charge = base_qs.filter(role='NM')
+                    users_to_charge = base_qs.filter(status='NM')
                 elif target == 'PLEDGE_CLASS':
                     sem = data.get('pledge_semester')
                     yr = data.get('pledge_year')
@@ -325,16 +324,15 @@ def pay_due(request, pk):
     due = get_object_or_404(Due, pk=pk)
     
     # Ideally, this integrates with Stripe/Venmo
-    # For now, we just mark it as paid (Treasurer only) 
+    # For now, we just mark it as paid (Positions with permission only) 
     # OR create a "Mark Paid" request logic later.
-    # Let's assume ONLY Treasurer can mark things paid for now.
     
-    if request.user.role in ['FIN']:
+    if request.user.position.can_manage_finance:
         due.is_paid = True
         due.save()
         messages.success(request, "Marked as Paid.")
     else:
-        messages.error(request, "Only the Treasurer can verify payments.")
+        messages.error(request, "Only people with permission can verify payments.")
         
     return redirect('dues_dashboard')
 
@@ -342,7 +340,7 @@ def pay_due(request, pk):
 def directory(request):
     user = request.user
     chapter = request.user.chapter
-    members = CustomUser.objects.filter(chapter=chapter).order_by('role', 'last_name', 'first_name')
+    members = CustomUser.objects.filter(chapter=chapter).order_by('status', 'last_name', 'first_name')
 
     query = request.GET.get('q')
     if query:
@@ -353,9 +351,9 @@ def directory(request):
             Q(hometown__icontains=query)
         )
 
-    role_filter = request.GET.get('role')
-    if role_filter:
-        members = members.filter(role=role_filter)
+    status_filter = request.GET.get('status')
+    if status_filter:
+        members = members.filter(status=status_filter)
     
     context = {
         'members': members,
