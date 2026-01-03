@@ -43,9 +43,10 @@ class CustomUser(AbstractUser):
     SEMESTER_CHOICES = [('Fall', 'Fall'), ('Spring', 'Spring')]
     pledge_semester = models.CharField(max_length=10, choices=SEMESTER_CHOICES, blank=True, null=True)
     pledge_year = models.IntegerField(blank=True, null=True, help_text="e.g. 2025")
-    
+
     def __str__(self):
-        if self.position and self.position.title != "No Position": return f"{self.username} ({self.position.title})"
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name} ({self.username})"
         return self.username
     
     def save(self, *args, **kwargs):
