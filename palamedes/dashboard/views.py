@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
 from .models import HousePoint, Due, Task, Announcement
-from .forms import NMPointRequestForm, ActivePointRequestForm, DirectPointAssignmentForm, SingleDueForm, BulkDueForm
+from .forms import NMPointRequestForm, ActivePointRequestForm, DirectPointAssignmentForm, SingleDueForm, BulkDueForm, BulkPointForm
 from users.models import CustomUser
 
 @login_required
@@ -74,7 +74,9 @@ def submit_points(request):
 # View for Actives to give points to NMs directly
 @login_required
 def assign_points(request):
-    if request.user.status == 'NM':
+    has_permission = (request.user.status != 'NM') or (request.user.position and request.user.position.can_manage_points)
+
+    if not has_permission:
         messages.error(request, "You do not have permission to do that.")
         return redirect('dashboard')
 
@@ -256,66 +258,76 @@ def dues_dashboard(request):
 @login_required
 def manage_dues_creation(request):
     # Security Check
-    if not request.user.position.can_manage_finance:
+    if not (request.user.position and request.user.position.can_manage_finance):
         messages.error(request, "Access Denied.")
         return redirect('dues_dashboard')
 
     single_form = SingleDueForm(request.user)
-    bulk_form = BulkDueForm()
 
-    if request.method == 'POST':
-        # Check which form was submitted
-        if 'submit_single' in request.POST:
-            single_form = SingleDueForm(request.user, request.POST)
-            if single_form.is_valid():
-                due = single_form.save(commit=False)
-                # Amount sign is already handled in form.clean()
-                due.save()
-                messages.success(request, f"Transaction created for {due.assigned_to.username}")
-                return redirect('dues_dashboard')
-        
-        elif 'submit_bulk' in request.POST:
-            bulk_form = BulkDueForm(request.POST)
-            if bulk_form.is_valid():
-                data = bulk_form.cleaned_data
-                target = data['target_group']
-                users_to_charge = []
+    # Default tab
+    active_tab = 'single'
+    
+    # Handle "Pre-fill" from Directory Selection
+    initial_data = {}
+    if request.method == 'POST' and 'directory_selection' in request.POST:
+        active_tab = 'bulk'
+        # Get list of IDs from the directory checkboxes
+        selected_ids = request.POST.getlist('selected_members')
+        if selected_ids:
+            initial_data = {
+                'target_group': 'SELECTED',
+                'selected_user_ids': ','.join(selected_ids)
+            }
+            messages.info(request, f"Selected {len(selected_ids)} members for billing.")
+    
+    bulk_form = BulkDueForm(initial=initial_data)
 
-                # Logic to find users
-                base_qs = CustomUser.objects.filter(chapter=request.user.chapter)
-                
-                if target == 'ALL':
-                    users_to_charge = base_qs
-                elif target == 'ACTIVES':
-                    users_to_charge = base_qs.exclude(status='NM')
-                elif target == 'NMS':
-                    users_to_charge = base_qs.filter(status='NM')
-                elif target == 'PLEDGE_CLASS':
-                    sem = data.get('pledge_semester')
-                    yr = data.get('pledge_year')
-                    if sem and yr:
-                        users_to_charge = base_qs.filter(pledge_semester=sem, pledge_year=yr)
-                    else:
-                        messages.error(request, "Please specify Semester and Year.")
-                        return redirect('manage_dues_creation')
+    # Handle Form Submission (Creating the Dues)
+    if request.method == 'POST' and 'submit_bulk' in request.POST:
+        bulk_form = BulkDueForm(request.POST)
+        if bulk_form.is_valid():
+            data = bulk_form.cleaned_data
+            target = data['target_group']
+            users_to_charge = []
+            base_qs = CustomUser.objects.filter(chapter=request.user.chapter)
+            
+            # Target Logic
+            if target == 'ALL':
+                users_to_charge = base_qs
+            elif target == 'ACTIVES':
+                users_to_charge = base_qs.exclude(status='NM')
+            elif target == 'NMS':
+                users_to_charge = base_qs.filter(status='NM')
+            elif target == 'PLEDGE_CLASS':
+                sem = data.get('pledge_semester')
+                yr = data.get('pledge_year')
+                if sem and yr:
+                    users_to_charge = base_qs.filter(pledge_semester=sem, pledge_year=yr)
+            elif target == 'SELECTED':
+                # Parse the hidden ID string back into a list
+                id_string = data.get('selected_user_ids', '')
+                if id_string:
+                    id_list = id_string.split(',')
+                    users_to_charge = base_qs.filter(id__in=id_list)
 
-                # Create the records
-                count = 0
-                for u in users_to_charge:
-                    Due.objects.create(
-                        title=data['title'],
-                        amount=data['amount'],
-                        due_date=data['due_date'],
-                        assigned_to=u
-                    )
-                    count += 1
-                
-                messages.success(request, f"Bulk charge assigned to {count} members.")
-                return redirect('dues_dashboard')
+            # Execution
+            count = 0
+            for u in users_to_charge:
+                Due.objects.create(
+                    title=data['title'],
+                    amount=data['amount'],
+                    due_date=data['due_date'],
+                    assigned_to=u
+                )
+                count += 1
+            
+            messages.success(request, f"Bulk charge assigned to {count} members.")
+            return redirect('dues_dashboard')
 
     context = {
         'single_form': single_form,
-        'bulk_form': bulk_form
+        'bulk_form': bulk_form,
+        'active_tab': active_tab
     }
     return render(request, 'dashboard/manage_dues.html', context)
 
@@ -375,3 +387,65 @@ def brother_profile(request, pk):
         'brother': brother
     }
     return render(request, 'dashboard/brother_profile.html', context)
+
+@login_required
+def manage_points_creation(request):
+    # Check Permission
+    if not (request.user.position and request.user.position.can_manage_points):
+        messages.error(request, "Access Denied.")
+        return redirect('dashboard')
+
+    # Handle "Handoff" from Directory
+    initial_data = {}
+    if request.method == 'POST' and 'directory_selection' in request.POST:
+        selected_ids = request.POST.getlist('selected_members')
+        if selected_ids:
+            initial_data = {
+                'target_group': 'SELECTED',
+                'selected_user_ids': ','.join(selected_ids)
+            }
+            messages.info(request, f"Selected {len(selected_ids)} members for point assignment.")
+    
+    form = BulkPointForm(initial=initial_data)
+
+    # Handle Submission
+    if request.method == 'POST' and 'submit_bulk_points' in request.POST:
+        form = BulkPointForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            
+            # Find Users (Reusing logic from Dues)
+            target = data['target_group']
+            base_qs = CustomUser.objects.filter(chapter=request.user.chapter)
+            users_to_update = []
+
+            if target == 'ALL': users_to_update = base_qs
+            elif target == 'ACTIVES': users_to_update = base_qs.exclude(status='NM')
+            elif target == 'NMS': users_to_update = base_qs.filter(status='NM')
+            elif target == 'PLEDGE_CLASS':
+                if data['pledge_semester'] and data['pledge_year']:
+                    users_to_update = base_qs.filter(pledge_semester=data['pledge_semester'], pledge_year=data['pledge_year'])
+            elif target == 'SELECTED':
+                id_string = data.get('selected_user_ids', '')
+                if id_string:
+                    users_to_update = base_qs.filter(id__in=id_string.split(','))
+
+            # Execute
+            count = 0
+            for u in users_to_update:
+                HousePoint.objects.create(
+                    user=u,
+                    submitted_by=request.user,
+                    chapter=request.user.chapter,
+                    amount=data['amount'],
+                    description=data['description'],
+                    date_for=data['date_for'],
+                    status='APPROVED', # Admin actions are auto-approved
+                    assigned_approver=request.user 
+                )
+                count += 1
+            
+            messages.success(request, f"Successfully processed points for {count} members.")
+            return redirect('dashboard')
+
+    return render(request, 'dashboard/manage_points.html', {'form': form})

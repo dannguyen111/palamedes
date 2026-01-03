@@ -37,19 +37,27 @@ class ActivePointRequestForm(forms.ModelForm):
 class DirectPointAssignmentForm(forms.ModelForm):
     class Meta:
         model = HousePoint
-        fields = ['user', 'amount', 'description', 'date_for'] # Select the NM user
+        fields = ['user', 'amount', 'description', 'date_for']
         widgets = {
             'date_for': DateInput(),
         }
 
     def __init__(self, request_user, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Only show New Members from the same chapter
-        self.fields['user'].queryset = CustomUser.objects.filter(
-            chapter=request_user.chapter,
-            status='NM'
-        )
-        self.fields['user'].label = "Assign to New Member"
+        
+        # Base queryset: Everyone in my chapter
+        queryset = CustomUser.objects.filter(chapter=request_user.chapter)
+
+        # Check permissions
+        user_pos = getattr(request_user, 'position', None)
+        can_manage_all = user_pos and user_pos.can_manage_points
+
+        if can_manage_all:
+            self.fields['user'].queryset = queryset
+            self.fields['user'].label = "Assign to Member" 
+        else:
+            self.fields['user'].queryset = queryset.filter(status='NM')
+            self.fields['user'].label = "Assign to New Member"
 
 class SingleDueForm(forms.ModelForm):
     # We add a "Type" field to help the UI, though it saves to 'amount'
@@ -97,9 +105,54 @@ class BulkDueForm(forms.Form):
         ('ACTIVES', 'All Actives'),
         ('NMS', 'All New Members'),
         ('PLEDGE_CLASS', 'Specific Pledge Class'),
+        ('SELECTED', 'Selected Members (From Directory)'),
     ]
     target_group = forms.ChoiceField(choices=TARGET_CHOICES)
+
+    # Hidden field to store the comma-separated list of IDs passed from the directory
+    selected_user_ids = forms.CharField(widget=forms.HiddenInput(), required=False)
 
     # Optional fields for Pledge Class
     pledge_semester = forms.ChoiceField(choices=[('Fall', 'Fall'), ('Spring', 'Spring')], required=False)
     pledge_year = forms.IntegerField(required=False, help_text="Required if Pledge Class is selected")
+
+class BulkPointForm(forms.Form):
+    # Transaction Type Logic
+    TRANSACTION_TYPES = [
+        ('AWARD', 'Award Points (+)'),
+        ('PENALTY', 'Deduct/Fine Points (-)'),
+    ]
+    type = forms.ChoiceField(choices=TRANSACTION_TYPES, widget=forms.RadioSelect, initial='AWARD')
+    
+    amount = forms.IntegerField(min_value=1)
+    description = forms.CharField(max_length=255)
+    date_for = forms.DateField(widget=DateInput())
+    
+    TARGET_CHOICES = [
+        ('ALL', 'Everyone in Chapter'),
+        ('ACTIVES', 'All Actives'),
+        ('NMS', 'All New Members'),
+        ('PLEDGE_CLASS', 'Specific Pledge Class'),
+        ('SELECTED', 'Selected Members (From Directory)'),
+    ]
+    target_group = forms.ChoiceField(choices=TARGET_CHOICES)
+    
+    # Hidden field to store IDs
+    selected_user_ids = forms.CharField(widget=forms.HiddenInput(), required=False)
+
+    # Optional Filters
+    pledge_semester = forms.ChoiceField(choices=[('Fall', 'Fall'), ('Spring', 'Spring')], required=False)
+    pledge_year = forms.IntegerField(required=False)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        t_type = cleaned_data.get('type')
+        amount = cleaned_data.get('amount')
+
+        # Automatically convert to negative if it's a penalty
+        if amount:
+            if t_type == 'PENALTY':
+                cleaned_data['amount'] = -abs(amount)
+            else:
+                cleaned_data['amount'] = abs(amount)
+        return cleaned_data
