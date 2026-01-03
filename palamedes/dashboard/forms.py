@@ -37,19 +37,27 @@ class ActivePointRequestForm(forms.ModelForm):
 class DirectPointAssignmentForm(forms.ModelForm):
     class Meta:
         model = HousePoint
-        fields = ['user', 'amount', 'description', 'date_for'] # Select the NM user
+        fields = ['user', 'amount', 'description', 'date_for']
         widgets = {
             'date_for': DateInput(),
         }
 
     def __init__(self, request_user, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Only show New Members from the same chapter
-        self.fields['user'].queryset = CustomUser.objects.filter(
-            chapter=request_user.chapter,
-            status='NM'
-        )
-        self.fields['user'].label = "Assign to New Member"
+        
+        # Base queryset: Everyone in my chapter
+        queryset = CustomUser.objects.filter(chapter=request_user.chapter)
+
+        # Check permissions
+        user_pos = getattr(request_user, 'position', None)
+        can_manage_all = user_pos and user_pos.can_manage_points
+
+        if can_manage_all:
+            self.fields['user'].queryset = queryset
+            self.fields['user'].label = "Assign to Member" 
+        else:
+            self.fields['user'].queryset = queryset.filter(status='NM')
+            self.fields['user'].label = "Assign to New Member"
 
 class SingleDueForm(forms.ModelForm):
     # We add a "Type" field to help the UI, though it saves to 'amount'
@@ -97,8 +105,12 @@ class BulkDueForm(forms.Form):
         ('ACTIVES', 'All Actives'),
         ('NMS', 'All New Members'),
         ('PLEDGE_CLASS', 'Specific Pledge Class'),
+        ('SELECTED', 'Selected Members (From Directory)'),
     ]
     target_group = forms.ChoiceField(choices=TARGET_CHOICES)
+
+    # Hidden field to store the comma-separated list of IDs passed from the directory
+    selected_user_ids = forms.CharField(widget=forms.HiddenInput(), required=False)
 
     # Optional fields for Pledge Class
     pledge_semester = forms.ChoiceField(choices=[('Fall', 'Fall'), ('Spring', 'Spring')], required=False)

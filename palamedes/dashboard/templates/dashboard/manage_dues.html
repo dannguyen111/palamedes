@@ -16,12 +16,14 @@
     <div class="card-header">
         <ul class="nav nav-tabs card-header-tabs" id="duesTabs" role="tablist">
             <li class="nav-item">
-                <a class="nav-link active" id="single-tab" data-toggle="tab" href="#single" role="tab">
+                <a class="nav-link {% if active_tab == 'single' %}active{% endif %}" id="single-tab" data-toggle="tab"
+                    href="#single" role="tab">
                     <i class="fas fa-user"></i> Single Transaction
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="bulk-tab" data-toggle="tab" href="#bulk" role="tab">
+                <a class="nav-link {% if active_tab == 'bulk' %}active{% endif %}" id="bulk-tab" data-toggle="tab"
+                    href="#bulk" role="tab">
                     <i class="fas fa-users"></i> Bulk / Mass Charge
                 </a>
             </li>
@@ -31,7 +33,8 @@
     <div class="card-body">
         <div class="tab-content" id="duesTabsContent">
 
-            <div class="tab-pane fade show active" id="single" role="tabpanel">
+            <div class="tab-pane fade {% if active_tab == 'single' %}show active{% endif %}" id="single"
+                role="tabpanel">
                 <h5 class="text-primary mb-3">Individual Charge or Scholarship</h5>
                 <form method="POST">
                     {% csrf_token %}
@@ -64,7 +67,7 @@
                 </form>
             </div>
 
-            <div class="tab-pane fade" id="bulk" role="tabpanel">
+            <div class="tab-pane fade {% if active_tab == 'bulk' %}show active{% endif %}" id="bulk" role="tabpanel">
                 <h5 class="text-danger mb-3">Mass Assignment</h5>
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle"></i> This will create a charge for <strong>multiple
@@ -74,6 +77,8 @@
                 <form method="POST">
                     {% csrf_token %}
                     <input type="hidden" name="submit_bulk" value="1">
+
+                    {{ bulk_form.selected_user_ids }}
 
                     <div class="row">
                         <div class="col-md-6">

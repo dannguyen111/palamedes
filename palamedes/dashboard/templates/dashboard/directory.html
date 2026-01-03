@@ -1,13 +1,20 @@
 {% extends "homepage/base.html" %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
         <h2 class="text-secondary">
             <a href="{% url 'dashboard' %}" class="text-secondary"><i class="fas fa-arrow-left"></i></a>
             Brother Directory
         </h2>
     </div>
+    {% if user.position.can_manage_finance %}
+    <div class="col-md-4 text-right">
+        <button type="submit" form="bulk-actions-form" class="btn btn-success shadow-sm">
+            <i class="fas fa-file-invoice-dollar"></i> Bill Selected
+        </button>
+    </div>
+    {% endif %}
 </div>
 
 <div class="row mb-4">
@@ -39,50 +46,62 @@
     </div>
 </div>
 
-<div class="row">
-    {% for member in members %}
-    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-        <div class="card h-100 shadow-sm border-0 hover-card">
+<form id="bulk-actions-form" method="POST" action="{% url 'manage_dues_creation' %}">
+    {% csrf_token %}
+    <input type="hidden" name="directory_selection" value="1">
 
-            <a href="{% url 'brother_profile' member.pk %}" class="stretched-link"></a>
+    <div class="row">
+        {% for member in members %}
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+            <div class="card h-100 shadow-sm border-0 hover-card position-relative">
 
-            <div class="text-center pt-4">
-                <img src="{{ member.image.url }}" class="rounded-circle img-thumbnail"
-                    style="width: 120px; height: 120px; object-fit: cover;">
-            </div>
+                {% if user.position.can_manage_finance %}
+                <div style="position: absolute; top: 10px; left: 10px; z-index: 10;">
+                    <input type="checkbox" name="selected_members" value="{{ member.id }}" class="big-checkbox"
+                        style="transform: scale(1.5);">
+                </div>
+                {% endif %}
 
-            <div class="card-body text-center">
+                <a href="{% url 'brother_profile' member.pk %}" class="stretched-link"></a>
 
-                <h5 class="card-title font-weight-bold mb-1">
-                    {{ member.first_name }} {{ member.last_name }}
-                </h5>
+                <div class="text-center pt-4">
+                    <img src="{{ member.image.url }}" class="rounded-circle img-thumbnail"
+                        style="width: 120px; height: 120px; object-fit: cover;">
+                </div>
 
-                <span class="badge badge-pill 
-                {% if member.status == 'NM' %}badge-info
-                {% elif member.status == 'ACT' %}badge-dark
-                {% else %}badge-primary{% endif %} mb-2">
-                    {{ member.get_status_display }}
-                </span>
+                <div class="card-body text-center">
 
-                <p class="card-text text-muted small mb-1">
-                    <i class="fas fa-graduation-cap"></i> {{ member.major|default:"Undeclared" }}
-                </p>
-            </div>
+                    <h5 class="card-title font-weight-bold mb-1">
+                        {{ member.first_name }} {{ member.last_name }}
+                    </h5>
 
-            <div class="card-footer bg-white border-top-0 pb-4 px-4">
-                <a href="mailto:{{ member.email }}" class="btn btn-outline-primary btn-block"
-                    style="position: relative; z-index: 2;">
-                    <i class="fas fa-envelope"></i> Email
-                </a>
+                    <span class="badge badge-pill 
+                    {% if member.status == 'NM' %}badge-info
+                    {% elif member.status == 'ACT' %}badge-dark
+                    {% else %}badge-primary{% endif %} mb-2">
+                        {{ member.get_status_display }}
+                    </span>
+
+                    <p class="card-text text-muted small mb-1">
+                        <i class="fas fa-graduation-cap"></i> {{ member.major|default:"Undeclared" }}
+                    </p>
+                </div>
+
+                <div class="card-footer bg-white border-top-0 pb-4 px-4">
+                    <a href="mailto:{{ member.email }}" class="btn btn-outline-primary btn-block"
+                        style="position: relative; z-index: 2;">
+                        <i class="fas fa-envelope"></i> Email
+                    </a>
+                </div>
             </div>
         </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <h4 class="text-muted">No brothers found matching your search.</h4>
+        </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="col-12 text-center py-5">
-        <h4 class="text-muted">No brothers found matching your search.</h4>
-    </div>
-    {% endfor %}
-</div>
+</form>
 
 <style>
     .hover-card:hover {
