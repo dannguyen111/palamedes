@@ -1,20 +1,35 @@
 {% extends "homepage/base.html" %}
 
 {% block content %}
+<div id="js-messages"></div>
+
 <div class="row mb-4 align-items-center">
-    <div class="col-md-8">
+    <div class="col-md-6">
         <h2 class="text-secondary">
             <a href="{% url 'dashboard' %}" class="text-secondary"><i class="fas fa-arrow-left"></i></a>
             Brother Directory
         </h2>
     </div>
-    {% if user.position.can_manage_finance %}
-    <div class="col-md-4 text-right">
-        <button type="submit" form="bulk-actions-form" class="btn btn-success shadow-sm">
-            <i class="fas fa-file-invoice-dollar"></i> Bill Selected
+
+    <div class="col-md-6 text-right">
+        <button type="button" class="btn btn-outline-dark shadow-sm mr-1" onclick="sendMassEmail()">
+            <i class="fas fa-envelope"></i> Mass Email
         </button>
+
+        {% if user.position.can_manage_points %}
+        <button type="submit" form="bulk-actions-form" formaction="{% url 'manage_points_creation' %}"
+            class="btn btn-primary shadow-sm mr-1">
+            <i class="fas fa-star"></i> Points
+        </button>
+        {% endif %}
+
+        {% if user.position.can_manage_finance %}
+        <button type="submit" form="bulk-actions-form" formaction="{% url 'manage_dues_creation' %}"
+            class="btn btn-success shadow-sm">
+            <i class="fas fa-file-invoice-dollar"></i> Bill
+        </button>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 
 <div class="row mb-4">
@@ -55,12 +70,11 @@
         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
             <div class="card h-100 shadow-sm border-0 hover-card position-relative">
 
-                {% if user.position.can_manage_finance %}
                 <div style="position: absolute; top: 10px; left: 10px; z-index: 10;">
-                    <input type="checkbox" name="selected_members" value="{{ member.id }}" class="big-checkbox"
+                    <input type="checkbox" name="selected_members" value="{{ member.id }}"
+                        data-email="{{ member.email }}" class="big-checkbox member-checkbox"
                         style="transform: scale(1.5);">
                 </div>
-                {% endif %}
 
                 <a href="{% url 'brother_profile' member.pk %}" class="stretched-link"></a>
 
@@ -83,7 +97,7 @@
                     </span>
 
                     <p class="card-text text-muted small mb-1">
-                        <i class="fas fa-graduation-cap"></i> {{ member.major|default:"Undeclared" }}
+                        <i class="fas fa-graduation-cap"></i> {{ member.position|default:"No Position" }}
                     </p>
                 </div>
 
@@ -102,6 +116,74 @@
         {% endfor %}
     </div>
 </form>
+
+<script>
+    function showMessage(message, type) {
+        const container = document.getElementById('js-messages');
+        const alertId = 'alert-' + Date.now(); // Unique ID for this alert
+
+        // Create the alert HTML
+        const html = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> 
+                ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        `;
+
+        container.innerHTML = html;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Set Timer to remove it after 5 seconds (5000ms)
+        setTimeout(() => {
+            const element = document.getElementById(alertId);
+            if (element) {
+                $(element).alert('close');
+            }
+        }, 5000);
+    }
+
+    function sendMassEmail() {
+        // Find all checked boxes
+        const checkboxes = document.querySelectorAll('.member-checkbox:checked');
+
+        if (checkboxes.length === 0) {
+            alert("Please select at least one member to email.");
+            return;
+        }
+
+        // Collect emails
+        let emails = [];
+        checkboxes.forEach((box) => {
+            const email = box.getAttribute('data-email');
+            if (email) emails.push(email);
+        });
+
+        if (emails.length === 0) {
+            alert("None of the selected members have email addresses.");
+            return;
+        }
+
+        const emailString = emails.join(', ');
+
+        // Try to Copy to Clipboard
+        navigator.clipboard.writeText(emailString).then(() => {
+            showMessage("Email addresses copied to clipboard.", "success");
+
+            // Try to open mail client
+            setTimeout(() => {
+                window.location.href = `mailto:?bcc=${emails.join(',')}`;
+            }, 1000);
+
+        }).catch(err => {
+            // FAILURE: Show Red Alert
+            console.error('Failed to copy: ', err);
+            showMessage("Could not copy emails automatically. Please check permissions.", "danger");
+        });
+    }
+</script>
 
 <style>
     .hover-card:hover {

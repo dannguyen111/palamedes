@@ -14,4 +14,5 @@ urlpatterns = [
     path('dues/pay/<int:pk>/', views.pay_due, name='pay_due'),
     path('directory/', views.directory, name='brother_directory'),
     path('directory/member/<int:pk>/', views.brother_profile, name='brother_profile'),
+    path('points/manage/', views.manage_points_creation, name='manage_points_creation'),
 ]

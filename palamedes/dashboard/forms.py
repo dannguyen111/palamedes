@@ -115,3 +115,44 @@ class BulkDueForm(forms.Form):
     # Optional fields for Pledge Class
     pledge_semester = forms.ChoiceField(choices=[('Fall', 'Fall'), ('Spring', 'Spring')], required=False)
     pledge_year = forms.IntegerField(required=False, help_text="Required if Pledge Class is selected")
+
+class BulkPointForm(forms.Form):
+    # Transaction Type Logic
+    TRANSACTION_TYPES = [
+        ('AWARD', 'Award Points (+)'),
+        ('PENALTY', 'Deduct/Fine Points (-)'),
+    ]
+    type = forms.ChoiceField(choices=TRANSACTION_TYPES, widget=forms.RadioSelect, initial='AWARD')
+    
+    amount = forms.IntegerField(min_value=1)
+    description = forms.CharField(max_length=255)
+    date_for = forms.DateField(widget=DateInput())
+    
+    TARGET_CHOICES = [
+        ('ALL', 'Everyone in Chapter'),
+        ('ACTIVES', 'All Actives'),
+        ('NMS', 'All New Members'),
+        ('PLEDGE_CLASS', 'Specific Pledge Class'),
+        ('SELECTED', 'Selected Members (From Directory)'),
+    ]
+    target_group = forms.ChoiceField(choices=TARGET_CHOICES)
+    
+    # Hidden field to store IDs
+    selected_user_ids = forms.CharField(widget=forms.HiddenInput(), required=False)
+
+    # Optional Filters
+    pledge_semester = forms.ChoiceField(choices=[('Fall', 'Fall'), ('Spring', 'Spring')], required=False)
+    pledge_year = forms.IntegerField(required=False)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        t_type = cleaned_data.get('type')
+        amount = cleaned_data.get('amount')
+
+        # Automatically convert to negative if it's a penalty
+        if amount:
+            if t_type == 'PENALTY':
+                cleaned_data['amount'] = -abs(amount)
+            else:
+                cleaned_data['amount'] = abs(amount)
+        return cleaned_data
