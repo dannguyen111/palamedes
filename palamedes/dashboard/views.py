@@ -255,6 +255,57 @@ def dues_dashboard(request):
     }
     return render(request, 'dashboard/dues_dashboard.html', context)
 
+def _helper_single_transaction(request, single_form):
+    if single_form.is_valid():
+        data = single_form.cleaned_data
+
+        Due.objects.create(
+            title = data['title'],
+            amount = data['amount'],
+            due_date = data['due_date'],
+            assigned_to = data['assigned_to']
+        )
+
+        messages.success(request, f'Charge was assigned to {data['assigned_to']} successfully.')
+        return redirect('dues_dashboard')
+
+def _helper_bulk_transaction(request, bulk_form):
+    if bulk_form.is_valid():
+        data = bulk_form.cleaned_data
+        target_group = data['target_group'] 
+        users_to_charge = []
+        members = CustomUser.objects.filter(chapter = request.user.chapter)
+
+        if target_group == 'ALL':
+            users_to_charge = members
+        elif target_group == 'ACTIVES':
+            users_to_charge = members.exclude(status = 'NM')
+        elif target_group == 'NMS':
+            users_to_charge = members.filter(status = 'NM')
+        elif target_group == 'PLEDGE_CLASS':
+            sem, year = members.get('pledge_semester'), members.get('pledge_year')
+
+            if sem and year:
+                users_to_charge = members.filer(pledge_semester = sem, pledge_year = year)
+        elif target_group == 'SELECTED':
+            id_string = data.get('selected_user_ids', '')
+            if id_string:
+                id_list = id_string.split(',')
+                users_to_charge = members.filter(id__in=id_list)
+
+        count = 0 
+        for u in users_to_charge:
+            Dues.objects.create(
+                title=data['title'],
+                amount=data['amount'],
+                due_date=data['due_date'],
+                assigned_to=u
+            )
+            count += 1
+
+        messages.success(request, f'Bulk charge assigned to {count} members.')
+        return redirect('dues_dashboard')
+
 @login_required
 def manage_dues_creation(request):
     # Security Check
@@ -262,10 +313,12 @@ def manage_dues_creation(request):
         messages.error(request, "Access Denied.")
         return redirect('dues_dashboard')
 
-    single_form = SingleDueForm(request.user)
+    single_form = SingleDueForm(request.user, request.POST)
 
     # Default tab
     active_tab = 'single'
+    if request.method == 'POST':
+        _helper_single_transaction(request, single_form)
     
     # Handle "Pre-fill" from Directory Selection
     initial_data = {}
@@ -285,44 +338,9 @@ def manage_dues_creation(request):
     # Handle Form Submission (Creating the Dues)
     if request.method == 'POST' and 'submit_bulk' in request.POST:
         bulk_form = BulkDueForm(request.POST)
-        if bulk_form.is_valid():
-            data = bulk_form.cleaned_data
-            target = data['target_group']
-            users_to_charge = []
-            base_qs = CustomUser.objects.filter(chapter=request.user.chapter)
-            
-            # Target Logic
-            if target == 'ALL':
-                users_to_charge = base_qs
-            elif target == 'ACTIVES':
-                users_to_charge = base_qs.exclude(status='NM')
-            elif target == 'NMS':
-                users_to_charge = base_qs.filter(status='NM')
-            elif target == 'PLEDGE_CLASS':
-                sem = data.get('pledge_semester')
-                yr = data.get('pledge_year')
-                if sem and yr:
-                    users_to_charge = base_qs.filter(pledge_semester=sem, pledge_year=yr)
-            elif target == 'SELECTED':
-                # Parse the hidden ID string back into a list
-                id_string = data.get('selected_user_ids', '')
-                if id_string:
-                    id_list = id_string.split(',')
-                    users_to_charge = base_qs.filter(id__in=id_list)
+        active_tab = 'bulk'
+        _helper_bulk_transaction(request, bulk_form)
 
-            # Execution
-            count = 0
-            for u in users_to_charge:
-                Due.objects.create(
-                    title=data['title'],
-                    amount=data['amount'],
-                    due_date=data['due_date'],
-                    assigned_to=u
-                )
-                count += 1
-            
-            messages.success(request, f"Bulk charge assigned to {count} members.")
-            return redirect('dues_dashboard')
 
     context = {
         'single_form': single_form,

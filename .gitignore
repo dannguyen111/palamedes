@@ -208,3 +208,5 @@ __marimo__/
 
 # User-uploaded media
 media/
+
+.env
