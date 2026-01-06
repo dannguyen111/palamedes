@@ -257,17 +257,10 @@ def dues_dashboard(request):
 
 def _helper_single_transaction(request, single_form):
     if single_form.is_valid():
-        data = single_form.cleaned_data
-
-        Due.objects.create(
-            title = data['title'],
-            amount = data['amount'],
-            due_date = data['due_date'],
-            assigned_to = data['assigned_to']
-        )
-
-        messages.success(request, f'Charge was assigned to {data['assigned_to']} successfully.')
+        saved_due = single_form.save()
+        messages.success(request, f'Charge was assigned to {saved_due.assigned_to} successfully.')
         return redirect('dues_dashboard')
+    return None
 
 def _helper_bulk_transaction(request, bulk_form):
     if bulk_form.is_valid():
@@ -305,6 +298,7 @@ def _helper_bulk_transaction(request, bulk_form):
 
         messages.success(request, f'Bulk charge assigned to {count} members.')
         return redirect('dues_dashboard')
+    return None
 
 @login_required
 def manage_dues_creation(request):
@@ -313,12 +307,17 @@ def manage_dues_creation(request):
         messages.error(request, "Access Denied.")
         return redirect('dues_dashboard')
 
-    single_form = SingleDueForm(request.user, request.POST)
-
+    single_form = SingleDueForm(request.user)
+    bulk_form = BulkDueForm()
     # Default tab
     active_tab = 'single'
     if request.method == 'POST':
-        _helper_single_transaction(request, single_form)
+        single_form = SingleDueForm(request.user, request.POST)
+        if 'submit_single' in request.POST:
+            result = _helper_single_transaction(request, single_form)
+
+            if result:
+                return result
     
     # Handle "Pre-fill" from Directory Selection
     initial_data = {}
@@ -339,8 +338,10 @@ def manage_dues_creation(request):
     if request.method == 'POST' and 'submit_bulk' in request.POST:
         bulk_form = BulkDueForm(request.POST)
         active_tab = 'bulk'
-        _helper_bulk_transaction(request, bulk_form)
+        result = _helper_bulk_transaction(request, bulk_form)
 
+        if result:
+            return result
 
     context = {
         'single_form': single_form,
