@@ -9,8 +9,11 @@
     </div>
     {% if is_treasurer %}
     <div class="col-md-4 text-right">
-        <a href="{% url 'manage_dues_creation' %}" class="btn btn-dark">
+        <a href="{% url 'manage_dues_creation' %}" class="btn btn-info">
             <i class="fas fa-cog"></i> Manage Dues & Aid
+        </a>
+        <a href="{% url 'unpaid_directory' %}" class="btn btn-info">
+            <i class="fas fa-cog"></i> Pending Payments
         </a>
     </div>
     {% endif %}
@@ -23,21 +26,21 @@
                     <div class="col">
                         <h5 class="text-muted text-uppercase mb-1">Current Balance Due</h5>
                         {% if total_due > 0 %}
-                            <h1 class="display-4 text-danger font-weight-bold">
-                                ${{ total_due|floatformat:2 }}
-                            </h1>
-                            <p class="text-danger">
-                                <i class="fas fa-exclamation-circle"></i> Action Required
-                            </p>
-                            <a href="#" class="btn btn-primary mt-2">Pay Now</a>
-                            {% else %}
-                            <h1 class="display-4 text-success font-weight-bold">
-                                $0.00
-                            </h1>
-                            <p class="text-success">
-                                <i class="fas fa-check-circle"></i> You are all paid up!
-                            </p>
-                            {% endif %}
+                        <h1 class="display-4 text-danger font-weight-bold">
+                            ${{ total_due|floatformat:2 }}
+                        </h1>
+                        <p class="text-danger">
+                            <i class="fas fa-exclamation-circle"></i> Action Required
+                        </p>
+                        <a href="#" class="btn btn-primary mt-2">Pay Now</a>
+                        {% else %}
+                        <h1 class="display-4 text-success font-weight-bold">
+                            $0.00
+                        </h1>
+                        <p class="text-success">
+                            <i class="fas fa-check-circle"></i> You are all paid up!
+                        </p>
+                        {% endif %}
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-file-invoice-dollar fa-4x text-gray-300"></i>

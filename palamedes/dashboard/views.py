@@ -393,6 +393,34 @@ def directory(request):
     return render(request, 'dashboard/directory.html', context)
 
 @login_required
+def unpaid_directory(request):
+    user = request.user
+    chapter = request.user.chapter 
+    members = CustomUser.objects.filter(dues__is_paid = False, chapter = chapter).distinct() \
+        .annotate(total_dues=Sum('dues__amount')
+    )
+
+    member_filter = request.GET.get('filter')
+    if member_filter:
+        members = members.filter(
+            Q(first_name__icontains = member_filter) |
+            Q(last_name__icontains = member_filter) |
+            Q(major__icontains = member_filter) |
+            Q(hometown__icontains = member_filter)
+    )
+
+    status_filter = request.GET.get('status')
+    if status_filter:
+        members = members.filter(status=status_filter)
+
+    context = {
+        'members' : members, 
+        'search_query' : member_filter or ""
+    }
+
+    return render(request, 'dashboard/unpaid_directory.html', context)
+
+@login_required
 def brother_profile(request, pk):
     # Fetch the specific brother or show 404
     brother = get_object_or_404(CustomUser, pk=pk)
