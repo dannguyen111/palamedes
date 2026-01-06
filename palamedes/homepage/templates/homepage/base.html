@@ -16,7 +16,7 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 sticky-top">
         <div class="container">
             <a class="navbar-brand"
                 href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}">
@@ -92,6 +92,56 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js"
         integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
         crossorigin="anonymous"></script>
+
+    <footer class="bg-dark text-white mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <h5 class="text-uppercase font-weight-bold">Palamedes</h5>
+                    <p class="small text-muted">
+                        The Fraternity Management System designed to handle points, dues, and tasks with
+                        ease.
+                    </p>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <h5 class="text-uppercase font-weight-bold">Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'home' %}" class="text-white-50">Home</a></li>
+                        <li><a href="{% url 'about' %}" class="text-white-50">About Palamedes</a></li>
+                        <li><a href="{% url 'start_chapter' %}" class="text-white-50">Start a Chapter</a></li>
+                        {% if user.is_authenticated %}
+                        <li><a href="{% url 'dashboard' %}" class="text-white-50">My Dashboard</a></li>
+                        {% else %}
+                        <li><a href="{% url 'login' %}" class="text-white-50">Login</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <h5 class="text-uppercase font-weight-bold">Connect</h5>
+                    <p class="small text-muted">
+                        Built with Django & Bootstrap.
+                    </p>
+                    <div class="mb-2">
+                        <a href="#" class="text-white mr-3"><i class="fab fa-github fa-lg"></i></a>
+                        <a href="#" class="text-white mr-3"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fas fa-envelope fa-lg"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="bg-secondary">
+
+            <div class="row">
+                <div class="col-md-12 text-center">
+                    <p class="small text-muted mb-0">
+                        &copy; {% now "Y" %} Palamedes. Designed by Dan Nguyen and Rajwat Singh.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 
 </html>
