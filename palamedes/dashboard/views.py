@@ -85,6 +85,7 @@ def assign_points(request):
         if form.is_valid():
             point = form.save(commit=False)
             point.submitted_by = request.user
+            point.assigned_approver = request.user
             point.chapter = request.user.chapter
             point.status = 'APPROVED' # Auto-approve!
             point.save()
@@ -154,7 +155,10 @@ def manage_point_request(request, pk):
         if action == 'approve':
             point.status = 'APPROVED'
             point.feedback = feedback
-            point.assigned_approver = request.user 
+            if point.submitted_by == request.user:
+                pass
+            else:
+                point.assigned_approver = request.user
             point.save()
             messages.success(request, f"Request approved for {point.amount} points.")
 
@@ -174,8 +178,7 @@ def manage_point_request(request, pk):
                 # SWAP LOGIC: If I am the Approver, send it back to Submitter
                 if point.status == 'PENDING':
                     point.status = 'COUNTERED'
-                    # Note: We keep assigned_approver as the Active, 
-                    # but the Inbox view knows to show it to the Submitter if status is COUNTERED.
+                    point.assigned_approver = request.user
                 
                 # If I am the Submitter (accepting a counter but changing value), send back to Approver
                 elif point.status == 'COUNTERED':
