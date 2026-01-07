@@ -10,6 +10,7 @@ urlpatterns = [
     path('points/manage/<int:pk>/', views.manage_point_request, name='manage_point'),
     path('ledger/', views.chapter_ledger, name='chapter_ledger'),
     path('dues/', views.dues_dashboard, name='dues_dashboard'),
+    path('dues/unpaid_directory', views.unpaid_directory, name='unpaid_directory'),
     path('dues/manage/', views.manage_dues_creation, name='manage_dues_creation'),
     path('dues/pay/<int:pk>/', views.pay_due, name='pay_due'),
     path('directory/', views.directory, name='brother_directory'),

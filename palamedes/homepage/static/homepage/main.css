@@ -1,0 +1,17 @@
+/* Make the body a flex container */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Ensure the main content area grows to push footer down */
+.flex-fill {
+    flex: 1;
+}
+
+/* Optional: Hover effect for footer links */
+footer a.text-white-50:hover {
+    color: #ffffff !important;
+    text-decoration: none;
+}
