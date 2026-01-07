@@ -95,44 +95,44 @@ def assign_points(request):
     
     return render(request, 'dashboard/assign_points.html', {'form': form})
 
-@login_required
-def inbox(request):
-    user = request.user
-    chapter = user.chapter
+# @login_required
+# def inbox(request):
+#     user = request.user
+#     chapter = user.chapter
 
-    # My Action Items
-    my_action_items = HousePoint.objects.filter(
-        chapter=chapter
-    ).filter(
-        Q(assigned_approver=user, status='PENDING') | 
-        Q(submitted_by=user, status='COUNTERED')
-    ).order_by('-date_submitted')
+#     # My Action Items
+#     my_action_items = HousePoint.objects.filter(
+#         chapter=chapter
+#     ).filter(
+#         Q(assigned_approver=user, status='PENDING') | 
+#         Q(submitted_by=user, status='COUNTERED')
+#     ).order_by('-date_submitted')
 
-    # Exec Queue
-    exec_queue = []
-    if user.position.can_manage_points:
-        exec_queue = HousePoint.objects.filter(
-            chapter=chapter,
-            assigned_approver__isnull=True,
-            status='PENDING'
-        ).exclude(submitted_by=user)
+#     # Exec Queue
+#     exec_queue = []
+#     if user.position.can_manage_points:
+#         exec_queue = HousePoint.objects.filter(
+#             chapter=chapter,
+#             assigned_approver__isnull=True,
+#             status='PENDING'
+#         ).exclude(submitted_by=user)
 
-    # HISTORY: All requests involving me (Sender, Recipient, or Approver)
-    # Filter: "Show every active, pending, rejected request... that involves the active user"
-    history_qs = HousePoint.objects.filter(
-        chapter=chapter
-    ).filter(
-        Q(user=user) |                 # I am the recipient
-        Q(submitted_by=user) |         # I submitted it
-        Q(assigned_approver=user)      # I approved/rejected/am assigned to it
-    ).order_by('-updated_at')          # Sort by last action date
+#     # HISTORY: All requests involving me (Sender, Recipient, or Approver)
+#     # Filter: "Show every active, pending, rejected request... that involves the active user"
+#     history_qs = HousePoint.objects.filter(
+#         chapter=chapter
+#     ).filter(
+#         Q(user=user) |                 # I am the recipient
+#         Q(submitted_by=user) |         # I submitted it
+#         Q(assigned_approver=user)      # I approved/rejected/am assigned to it
+#     ).order_by('-updated_at')          # Sort by last action date
 
-    context = {
-        'my_action_items': my_action_items,
-        'exec_queue': exec_queue,
-        'history': history_qs
-    }
-    return render(request, 'dashboard/inbox.html', context)
+#     context = {
+#         'my_action_items': my_action_items,
+#         'exec_queue': exec_queue,
+#         'history': history_qs
+#     }
+#     return render(request, 'dashboard/inbox.html', context)
 
 @login_required
 def manage_point_request(request, pk):
@@ -188,40 +188,38 @@ def manage_point_request(request, pk):
 
     return redirect('points_hub')
 
-@login_required
-def chapter_ledger(request):
-    user = request.user
-    chapter = user.chapter
+# @login_required
+# def chapter_ledger(request):
+#     user = request.user
+#     chapter = user.chapter
 
-    # Leaderboards (Group by User, Sum Amount)
-    # We only count APPROVED points
-    leaderboard_data = CustomUser.objects.filter(chapter=chapter).annotate(
-        total_points=Coalesce(
-            Sum('points_received__amount', filter=Q(points_received__status='APPROVED')),
-            0
-        )
-    ).order_by('-total_points')
+#     # Leaderboards (Group by User, Sum Amount)
+#     # We only count APPROVED points
+#     leaderboard_data = CustomUser.objects.filter(chapter=chapter).annotate(
+#         total_points=Coalesce(
+#             Sum('points_received__amount', filter=Q(points_received__status='APPROVED')),
+#             0
+#         )
+#     ).order_by('-total_points')
 
-    # Separate into two lists in Python
-    active_leaderboard = [u for u in leaderboard_data if u.status == 'ACT']
-    nm_leaderboard = [u for u in leaderboard_data if u.status == 'NM']
+#     # Separate into two lists in Python
+#     active_leaderboard = [u for u in leaderboard_data if u.status == 'ACT']
+#     nm_leaderboard = [u for u in leaderboard_data if u.status == 'NM']
 
-    # Mother Log (Every request ever)
-    # Only Actives can see the full log
-    full_log = []
-    if user.status != 'NM':
-        full_log = HousePoint.objects.filter(chapter=chapter).order_by('-date_submitted')
-    # NM can see NM logs
-    else:
-        full_log = HousePoint.objects.filter(chapter=chapter, user__status='NM').order_by('-date_submitted')
-    context = {
-        'active_leaderboard': active_leaderboard,
-        'nm_leaderboard': nm_leaderboard,
-        'full_log': full_log
-    }
-    return render(request, 'dashboard/ledger.html', context)
-
-# palamedes/dashboard/views.py
+#     # Mother Log (Every request ever)
+#     # Only Actives can see the full log
+#     full_log = []
+#     if user.status != 'NM':
+#         full_log = HousePoint.objects.filter(chapter=chapter).order_by('-date_submitted')
+#     # NM can see NM logs
+#     else:
+#         full_log = HousePoint.objects.filter(chapter=chapter, user__status='NM').order_by('-date_submitted')
+#     context = {
+#         'active_leaderboard': active_leaderboard,
+#         'nm_leaderboard': nm_leaderboard,
+#         'full_log': full_log
+#     }
+#     return render(request, 'dashboard/ledger.html', context)
 
 @login_required
 def points_hub(request):
