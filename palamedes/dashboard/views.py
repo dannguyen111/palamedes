@@ -11,7 +11,6 @@ from .models import HousePoint, Due, Task, Announcement
 from .forms import NMPointRequestForm, ActivePointRequestForm, DirectPointAssignmentForm, SingleDueForm, BulkDueForm, BulkPointForm
 from users.models import CustomUser
 from django.http import JsonResponse
-import json
 
 @login_required
 def dashboard(request):
