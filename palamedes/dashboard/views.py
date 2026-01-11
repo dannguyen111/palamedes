@@ -529,7 +529,14 @@ def mark_paid(request, pk):
         if not amount:
             payment_amount = due.amount
         else:
-            payment_amount = int(amount)
+            try:
+                payment_amount = int(amount)
+            except (TypeError, ValueError):
+                messages.error(request, "Invalid payment amount. Please enter a whole number.")
+                return redirect('brothers_due', due.assigned_to.pk)
+            if payment_amount < 0:
+                messages.error(request, "Invalid payment amount. Amount cannot be negative.")
+                return redirect('brothers_due', due.assigned_to.pk)
 
         due.amount -= payment_amount
 
