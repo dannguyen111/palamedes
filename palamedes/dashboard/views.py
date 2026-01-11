@@ -459,8 +459,15 @@ def process_payment(request, pk):
 @login_required
 def payment_success(request):
     session_id = request.GET.get('session_id')
-    session = stripe.checkout.Session.retrieve(session_id) 
+    if not session_id:
+        messages.error(request, "Missing payment session information. Please try again.")
+        return redirect('dashboard')
 
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except Exception:
+        messages.error(request, "There was a problem verifying your payment. Please contact support if this persists.")
+        return redirect('dashboard')
 
     processed_sessions = request.session.get('processed_sessions', [])
 
