@@ -1,4 +1,7 @@
 {% extends "homepage/base.html" %}
+<script src="https://js.braintreegateway.com/web/3.97.2/js/client.min.js"></script>
+<script src="https://js.braintreegateway.com/web/3.97.2/js/venmo.min.js"></script>
+<script src="https://js.braintreegateway.com/web/3.97.2/js/data-collector.min.js"></script>
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
@@ -32,7 +35,6 @@
                         <p class="text-danger">
                             <i class="fas fa-exclamation-circle"></i> Action Required
                         </p>
-                        <a href="#" class="btn btn-primary mt-2">Pay Now</a>
                         {% else %}
                         <h1 class="display-4 text-success font-weight-bold">
                             $0.00
@@ -56,26 +58,36 @@
             <div class="card-header bg-danger text-white">
                 <h5 class="mb-0"><i class="fas fa-exclamation-circle"></i> Unpaid Charges</h5>
             </div>
-            <ul class="list-group list-group-flush">
-                {% for due in my_dues %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">{{ due.title }}</h6>
-                        <small class="text-muted">Due: {{ due.due_date }}</small>
+            <form method="POST" action="{% url 'create_bulk_checkout_session' %}">
+                {% csrf_token %}
+                <ul class="list-group list-group-flush">
+                    {% for due in my_dues %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">{{ due.title }}</h6>
+                            <small class="text-muted">Due: {{ due.due_date }}</small>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-weight-bold text-danger">${{ due.amount }}</span>
+                            <input type="checkbox" name="due_ids" value="{{ due.pk }}" class="mr-3 due-checkbox" {% if due.is_paid %}disabled{% endif %}>
+                            <a href="{% url 'payment_page' due.id %}" class="btn btn-sm btn-outline-success ml-2">Pay Now</a>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-center text-muted">You are all paid up!</li>
+                    {% endfor %}
+                </ul>
+                <div class="d-flex justify-content-end align-items-center mb-3">
+                    <div class="d-flex align-items-center mt-3">
+                        <button type="button" id="select-all-btn" class="btn btn-outline-secondary font-weight-bold mr-2 px-3 py-2">
+                            <i class="far fa-check-square mr-1"></i> Select All
+                        </button>
+                        <button type="submit" id="pay-button" class="btn btn-primary rounded-pill px-4 py-2 shadow-sm font-weight-bold" style="display: none;">
+                            Pay Selected <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
                     </div>
-                    <div class="text-right">
-                        <span class="font-weight-bold text-danger">${{ due.amount }}</span>
-                        {% if is_treasurer %}
-                        <a href="{% url 'pay_due' due.id %}" class="btn btn-sm btn-outline-success ml-2">Mark Paid</a>
-                        {% else %}
-                        <button class="btn btn-sm btn-outline-secondary ml-2" disabled>Unpaid</button>
-                        {% endif %}
-                    </div>
-                </li>
-                {% empty %}
-                <li class="list-group-item text-center text-muted">You are all paid up!</li>
-                {% endfor %}
-            </ul>
+                </div>
+            </form>
         </div>
     </div>
     <div class="col-md-6">
@@ -90,12 +102,6 @@
                         <h6 class="mb-0">{{ item.title }}</h6>
                         <small class="text-muted">Cleared: {{ item.due_date }}</small>
                     </div>
-                    {% if item.amount < 0 %} <span class="badge badge-info badge-pill">Scholarship/Aid</span>
-                        <span class="text-success font-weight-bold">${{ item.amount|stringformat:"+d" }}</span> {% else
-                        %}
-                        <span class="text-muted" style="text-decoration: line-through;">${{ item.amount }}</span>
-                        <span class="badge badge-success">Paid</span>
-                        {% endif %}
                 </li>
                 {% empty %}
                 <li class="list-group-item text-center text-muted">No history yet.</li>
@@ -104,4 +110,41 @@
         </div>
     </div>
 </div>
+<script>
+const payButton = document.getElementById('pay-button');
+const checkboxes = document.querySelectorAll('.due-checkbox');
+const selectAllBtn = document.getElementById('select-all-btn');
+
+// Your existing visibility logic
+function toggleButton() {
+    const isAnyChecked = Array.from(checkboxes).some(box => box.checked);
+    payButton.style.display = isAnyChecked ? 'block' : 'none'; // or 'inline-block'
+}
+
+// --- NEW: Select All Logic ---
+selectAllBtn.addEventListener('click', function() {
+    // Check if all are currently checked
+    const allChecked = Array.from(checkboxes).every(box => box.checked);
+
+    // If all are checked, uncheck them. Otherwise, check them all.
+    const newState = !allChecked;
+
+    checkboxes.forEach(box => {
+        if (!box.disabled) { // Don't mess with disabled (already paid) boxes
+            box.checked = newState;
+        }
+    });
+
+    // Update the button text
+    selectAllBtn.textContent = newState ? "Deselect All" : "Select All";
+
+    // IMPORTANT: Manually trigger the visibility check
+    toggleButton();
+});
+
+// Attach listeners to individual boxes (Your existing code)
+checkboxes.forEach(box => {
+    box.addEventListener('change', toggleButton);
+});
+</script>
 {% endblock %}
