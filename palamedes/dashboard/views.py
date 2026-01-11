@@ -421,7 +421,6 @@ def process_payment(request, pk):
         due = get_object_or_404(Due, pk = pk, assigned_to = request.user)
 
         amount_str = request.POST.get('due_amount') 
-        print(amount_str)
         amount = int(float(amount_str) * 100)
         title = due.title
 
