@@ -36,7 +36,7 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text bg-light border-right-0 font-weight-bold">$</span>
                             </div>
-                            <input type="number" name="due_amount" class="form-control form-control-lg border-left-0" placeholder="0.00" step="0.01" min="1.00" max="{{ due.remaining_balance }}" required>
+                            <input type="number" name="due_amount" class="form-control form-control-lg border-left-0" placeholder="0.00" step="0.01" min="1.00" max="{{ due.amount }}" required>
                         </div>
                         <button type="submit" class="btn btn-outline-primary btn-block btn-lg shadow-sm">
                             Pay Custom Amount
