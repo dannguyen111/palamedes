@@ -149,3 +149,7 @@ LOGIN_URL = 'login'
 # Media files (for profile pictures)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+
+STRIPE_PUBLIC_KEY = 'pk_test_51Sn9SdC9aeKFAcVNlNXjCbCAjqMAhW4PPt96tc3b6fRwl7X0y2NcTnjql5zldB7FjvTHFp98NBrNmMxH1SFxvNKF00XaZngjLJ'
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+

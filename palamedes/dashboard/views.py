@@ -1,4 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
+import stripe
+from decimal import Decimal
+from django.conf import settings
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q
@@ -6,6 +10,7 @@ from django.db.models.functions import Coalesce
 from .models import HousePoint, Due, Task, Announcement
 from .forms import NMPointRequestForm, ActivePointRequestForm, DirectPointAssignmentForm, SingleDueForm, BulkDueForm, BulkPointForm
 from users.models import CustomUser
+from django.http import JsonResponse
 
 @login_required
 def dashboard(request):
@@ -361,7 +366,7 @@ def _helper_bulk_transaction(request, bulk_form):
 
         count = 0 
         for u in users_to_charge:
-            Dues.objects.create(
+            Due.objects.create(
                 title=data['title'],
                 amount=data['amount'],
                 due_date=data['due_date'],
@@ -423,22 +428,203 @@ def manage_dues_creation(request):
     }
     return render(request, 'dashboard/manage_dues.html', context)
 
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
 @login_required
-def pay_due(request, pk):
+def payment_page(request, pk):
+    due = get_object_or_404(Due, pk = pk, assigned_to = request.user)
+
+    context = {
+        'due' : due, 
+        'stripe_api_key' : stripe.api_key
+    }
+
+    return render(request, 'dashboard/payment_page.html', context)
+
+@login_required
+def create_bulk_checkout_session(request):
+    if request.POST:
+        ids = request.POST.getlist('due_ids')
+
+        dues = Due.objects.filter(pk__in = ids, assigned_to = request.user)
+
+        stripe_line_items = []
+        valid_due_ids = []
+
+        for due in dues:
+            temp = {
+                        'price_data' : {
+                            'currency' : 'usd',
+                            'product_data' : {
+                                'name' : due.title
+                            },
+                            'unit_amount_decimal' : due.amount * 100
+                        }, 
+                        'quantity' : 1,
+                    }
+
+            stripe_line_items.append(temp)
+            valid_due_ids.append(str(due.id))
+
+        try:
+            bulk_checkout = stripe.checkout.Session.create(
+                line_items = stripe_line_items,
+                mode = 'payment',
+                metadata = {
+                    'user_id' : request.user.id,
+                    'payment_type': 'bulk_payment',
+                    'due_ids_str': ",".join(valid_due_ids)
+                },
+                success_url=request.build_absolute_uri(reverse('payment_success')) + '?session_id={CHECKOUT_SESSION_ID}',
+                cancel_url=request.build_absolute_uri(reverse('dashboard')),
+            )
+            return redirect(bulk_checkout.url, code = 303)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return redirect('dashboard')
+
+
+
+@login_required
+def process_payment(request, pk):
+    if request.POST:
+        due = get_object_or_404(Due, pk = pk, assigned_to = request.user)
+
+        amount_str = request.POST.get('due_amount') 
+        amount = int(float(amount_str) * 100)
+        title = due.title
+
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                line_items=[
+                    {
+                        'price_data' : {
+                            'currency' : 'usd',
+                            'product_data' : {
+                                'name' : title
+                            },
+                            'unit_amount_decimal' : amount
+                        }, 
+                        'quantity' : 1,
+                    }
+                ],
+
+                mode='payment',
+                metadata={
+                    'due_id': due.pk,      
+                    'user_id': request.user.id,
+                    'payment_type': 'single'
+                },
+                success_url=request.build_absolute_uri(reverse('payment_success')) + '?session_id={CHECKOUT_SESSION_ID}',
+                cancel_url=request.build_absolute_uri(reverse('payment_page', args=[pk])),
+
+            )
+
+            return redirect(checkout_session.url, code = 303)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return redirect('dashboard')
+
+@login_required
+def payment_success(request):
+    session_id = request.GET.get('session_id')
+    if not session_id:
+        messages.error(request, "Missing payment session information. Please try again.")
+        return redirect('dashboard')
+
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except Exception:
+        messages.error(request, "There was a problem verifying your payment. Please contact support if this persists.")
+        return redirect('dashboard')
+
+    processed_sessions = request.session.get('processed_sessions', [])
+
+    if session.metadata['payment_type'] == 'bulk_payment':
+        due_ids_str = session.metadata.get('due_ids_str')
+        if due_ids_str:
+            due_ids = due_ids_str.split(',')
+
+            dues_paid = Due.objects.filter(pk__in = due_ids, assigned_to = request.user) 
+
+            for due in dues_paid:   
+                due.is_paid = True
+                due.amount = 0
+                due.save()
+            return render(request, 'dashboard/successful_payment.html', {'dues': dues_paid})
+
+    amount_paid = Decimal(session.amount_total) / Decimal(100)
+    due_id = session.metadata['due_id']
+
+    due = get_object_or_404(Due, pk = due_id)
+
+    context = {
+    'due':due,
+    'amount_paid': amount_paid
+    }
+
+
+    if session_id in processed_sessions:
+        return render(request, 'dashboard/successful_payment.html', context) 
+
+    processed_sessions.append(session_id)
+    request.session['processed_sessions'] = processed_sessions
+    request.session.modified = True
+
+    due.amount -= amount_paid
+
+    if due.amount <= 0:
+        due.is_paid = True
+    due.save()
+
+
+    return render(request, 'dashboard/successful_payment.html', context)
+
+@login_required
+def make_payment_treasurer(request, pk):
+    due = get_object_or_404(Due, pk=pk)
+    context = {
+        'due' : due
+    }
+
+    return render(request, 'dashboard/paid_treasurer.html', context)
+
+@login_required
+def mark_paid(request, pk):
     due = get_object_or_404(Due, pk=pk)
     
-    # Ideally, this integrates with Stripe/Venmo
-    # For now, we just mark it as paid (Positions with permission only) 
-    # OR create a "Mark Paid" request logic later.
-    
     if request.user.position.can_manage_finance:
-        due.is_paid = True
+        amount = request.POST.get('amount')
+        if not amount:
+            payment_amount = due.amount
+        else:
+            try:
+                payment_amount = int(amount)
+            except (TypeError, ValueError):
+                messages.error(request, "Invalid payment amount. Please enter a whole number.")
+                return redirect('brothers_due', due.assigned_to.pk)
+            if payment_amount < 0:
+                messages.error(request, "Invalid payment amount. Amount cannot be negative.")
+                return redirect('brothers_due', due.assigned_to.pk)
+
+        due.amount -= payment_amount
+
+        if due.amount <= 0:
+            due.is_paid = True
         due.save()
-        messages.success(request, "Marked as Paid.")
+
+        if due.amount <= 0:
+            messages.success(request, "Marked as Paid.")
+        else:
+            messages.success(request, f'The due has been updated. {due.assigned_to.first_name }  {due.assigned_to.last_name } still has {due.amount} left to pay.')
     else:
         messages.error(request, "Only people with permission can verify payments.")
         
-    return redirect('dues_dashboard')
+    return redirect('brothers_due', due.assigned_to.pk)
 
 @login_required
 def directory(request):
@@ -492,6 +678,19 @@ def unpaid_directory(request):
     }
 
     return render(request, 'dashboard/unpaid_directory.html', context)
+
+def dues_member(request, pk):
+    brother = get_object_or_404(CustomUser, pk=pk)
+    dues = Due.objects.filter(assigned_to=brother).order_by('is_paid', 'due_date')
+
+    context = {
+        'brother' : brother, 
+        'dues' : dues
+    }
+
+    return render(request, 'dashboard/member_dues_details.html', context)
+
+
 
 @login_required
 def brother_profile(request, pk):

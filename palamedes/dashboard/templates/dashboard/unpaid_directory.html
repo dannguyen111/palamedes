@@ -1,8 +1,6 @@
 {% extends "homepage/base.html" %}
-
 {% block content %}
 <div id="js-messages"></div>
-
 <div class="row mb-4 align-items-center">
     <div class="col-md-6">
         <h2 class="text-secondary">
@@ -10,33 +8,26 @@
             Pending Charges Directory
         </h2>
     </div>
-
     <div class="col-md-6 text-right">
         <button type="button" class="btn btn-outline-dark shadow-sm mr-1" onclick="sendMassEmail()">
             <i class="fas fa-envelope"></i> Mass Email
         </button>
-
         {% if user.position.can_manage_points %}
-        <button type="submit" form="bulk-actions-form" formaction="{% url 'manage_points_creation' %}"
-            class="btn btn-primary shadow-sm mr-1">
+        <button type="submit" form="bulk-actions-form" formaction="{% url 'manage_points_creation' %}" class="btn btn-primary shadow-sm mr-1">
             <i class="fas fa-star"></i> Points
         </button>
         {% endif %}
-
         {% if user.position.can_manage_finance %}
-        <button type="submit" form="bulk-actions-form" formaction="{% url 'manage_dues_creation' %}"
-            class="btn btn-success shadow-sm">
+        <button type="submit" form="bulk-actions-form" formaction="{% url 'manage_dues_creation' %}" class="btn btn-success shadow-sm">
             <i class="fas fa-file-invoice-dollar"></i> Bill
         </button>
         {% endif %}
     </div>
 </div>
-
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card shadow-sm p-3">
             <form method="GET" class="form-inline justify-content-center">
-
                 <div class="input-group mb-2 mr-sm-2" style="width: 50%;">
                     <div class="input-group-prepend">
                         <div class="input-group-text"><i class="fas fa-search"></i></div>
@@ -44,27 +35,22 @@
                     <input type="text" name="filter" class="form-control"
                         placeholder="Search name, major, or hometown..." value="{{ search_query }}">
                 </div>
-
                 <select name="status" class="custom-select mb-2 mr-sm-2">
                     <option value="">Status</option>
                     <option value="ACT">Active</option>
                     <option value="NM">New Members</option>
                 </select>
-
                 <button type="submit" class="btn btn-primary mb-2">Filter</button>
-
                 {% if search_query or request.GET.status %}
-                <a href="{% url 'brother_directory' %}" class="btn btn-outline-secondary mb-2 ml-2">Clear</a>
+                <a href="{% url 'unpaid_directory' %}" class="btn btn-outline-secondary mb-2 ml-2">Clear</a>
                 {% endif %}
             </form>
         </div>
     </div>
 </div>
-
 <form id="bulk-actions-form" method="POST" action="{% url 'manage_dues_creation' %}">
     {% csrf_token %}
     <input type="hidden" name="directory_selection" value="1">
-
     <div class="card shadow-sm border-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -77,6 +63,7 @@
                         <th>Status</th>
                         <th>Position</th>
                         <th>Total Owed</th>
+                        <th>View Dues</th>
                         <th class="text-right">Actions</th>
                     </tr>
                 </thead>
@@ -84,34 +71,23 @@
                     {% for member in members %}
                     <tr>
                         <td class="align-middle text-center">
-                            <input type="checkbox" name="selected_members" value="{{ member.pk }}"
-                                data-email="{{ member.email }}" class="member-checkbox"
-                                style="transform: scale(1.2); cursor: pointer;">
+                            <input type="checkbox" name="selected_members" value="{{ member.pk }}" data-email="{{ member.email }}" class="member-checkbox" style="transform: scale(1.2); cursor: pointer;">
                         </td>
-
                         <td class="align-middle">
                             <div class="d-flex align-items-center">
                                 <a href="{% url 'brother_profile' member.pk %}">
                                     {% if member.image %}
-                                    <img src="{{ member.image.url }}" class="rounded-circle border"
-                                        style="width: 45px; height: 45px; object-fit: cover; margin-right: 15px;">
+                                    <img src="{{ member.image.url }}" class="rounded-circle border" style="width: 45px; height: 45px; object-fit: cover; margin-right: 15px;">
                                     {% else %}
-                                    <img src="https://via.placeholder.com/45?text={{ member.first_name|slice:':1' }}"
-                                        class="rounded-circle border"
-                                        style="width: 45px; height: 45px; object-fit: cover; margin-right: 15px;">
+                                    <img src="https://via.placeholder.com/45?text={{ member.first_name|slice:':1' }}" class="rounded-circle border" style="width: 45px; height: 45px; object-fit: cover; margin-right: 15px;">
                                     {% endif %}
                                 </a>
-
                                 <div>
-                                    <a href="{% url 'brother_profile' member.pk %}"
-                                        class="text-dark font-weight-bold text-decoration-none">
-                                        {{ member.first_name }} {{ member.last_name }}
-                                    </a>
+                                    {{ member.first_name }} {{ member.last_name }}
                                     <div class="small text-muted">{{ member.email }}</div>
                                 </div>
                             </div>
                         </td>
-
                         <td class="align-middle">
                             <span class="badge badge-pill 
                             {% if member.status == 'NM' %}badge-info
@@ -120,7 +96,6 @@
                                 {{ member.get_status_display }}
                             </span>
                         </td>
-
                         <td class="align-middle">
                             {% if member.position %}
                             {{ member.position.title }}
@@ -128,15 +103,17 @@
                             <span class="text-muted small">&mdash;</span>
                             {% endif %}
                         </td>
-
                         <td class="align-middle text-danger font-weight-bold">
                             ${{ member.total_dues|default:"0.00" }}
                         </td>
-
+                        <td class="align-middle text-danger font-weight-bold">
+                            <a href="{% url 'brothers_due' member.pk %}" class="btn btn-outline-primary btn-sm" title="View Dues History" data-toggle="tooltip">
+                                <i class="bi bi-bank"></i>
+                            </a>
+                        </td>
                         <td class="align-middle text-right">
-                            <a href="mailto:{{ member.email }}" class="btn btn-sm btn-outline-primary"
-                                title="Send Email">
-                                <i class="fas fa-envelope"></i>
+                            <a href="mailto:{{ member.email }}" class="btn btn-sm btn-outline-primary" title="Send Email">
+                                <i class="bi bi-envelope"></i>
                             </a>
                         </td>
                     </tr>
@@ -152,14 +129,13 @@
         </div>
     </div>
 </form>
-
 <script>
-    function showMessage(message, type) {
-        const container = document.getElementById('js-messages');
-        const alertId = 'alert-' + Date.now(); // Unique ID for this alert
+function showMessage(message, type) {
+    const container = document.getElementById('js-messages');
+    const alertId = 'alert-' + Date.now(); // Unique ID for this alert
 
-        // Create the alert HTML
-        const html = `
+    // Create the alert HTML
+    const html = `
             <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
                 <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> 
                 ${message}
@@ -169,61 +145,60 @@
             </div>
         `;
 
-        container.innerHTML = html;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    container.innerHTML = html;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // Set Timer to remove it after 5 seconds
+    // Set Timer to remove it after 5 seconds
+    setTimeout(() => {
+        const element = document.getElementById(alertId);
+        if (element) {
+            $(element).alert('close');
+        }
+    }, 5000);
+}
+
+function sendMassEmail() {
+    // Find all checked boxes
+    const checkboxes = document.querySelectorAll('.member-checkbox:checked');
+
+    if (checkboxes.length === 0) {
+        alert("Please select at least one member to email.");
+        return;
+    }
+
+    // Collect emails
+    let emails = [];
+    checkboxes.forEach((box) => {
+        const email = box.getAttribute('data-email');
+        if (email) emails.push(email);
+    });
+
+    if (emails.length === 0) {
+        alert("None of the selected members have email addresses.");
+        return;
+    }
+
+    const emailString = emails.join(', ');
+
+    // Try to Copy to Clipboard
+    navigator.clipboard.writeText(emailString).then(() => {
+        showMessage("Email addresses copied to clipboard.", "success");
+
+        // Try to open mail client
         setTimeout(() => {
-            const element = document.getElementById(alertId);
-            if (element) {
-                $(element).alert('close');
-            }
-        }, 5000);
-    }
+            window.location.href = `mailto:?bcc=${emails.join(',')}`;
+        }, 1000);
 
-    function sendMassEmail() {
-        // Find all checked boxes
-        const checkboxes = document.querySelectorAll('.member-checkbox:checked');
-
-        if (checkboxes.length === 0) {
-            alert("Please select at least one member to email.");
-            return;
-        }
-
-        // Collect emails
-        let emails = [];
-        checkboxes.forEach((box) => {
-            const email = box.getAttribute('data-email');
-            if (email) emails.push(email);
-        });
-
-        if (emails.length === 0) {
-            alert("None of the selected members have email addresses.");
-            return;
-        }
-
-        const emailString = emails.join(', ');
-
-        // Try to Copy to Clipboard
-        navigator.clipboard.writeText(emailString).then(() => {
-            showMessage("Email addresses copied to clipboard.", "success");
-
-            // Try to open mail client
-            setTimeout(() => {
-                window.location.href = `mailto:?bcc=${emails.join(',')}`;
-            }, 1000);
-
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-            showMessage("Could not copy emails automatically. Please check permissions.", "danger");
-        });
-    }
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        showMessage("Could not copy emails automatically. Please check permissions.", "danger");
+    });
+}
 </script>
-
 <style>
-    /* Makes the whole row clickable lightly */
-    .table-hover tbody tr:hover {
-        background-color: #f8f9fa;
-    }
+/* Makes the whole row clickable lightly */
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+}
 </style>
 {% endblock %}
