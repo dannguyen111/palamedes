@@ -90,6 +90,7 @@ def assign_points(request):
         if form.is_valid():
             point = form.save(commit=False)
             point.submitted_by = request.user
+            point.assigned_approver = request.user
             point.chapter = request.user.chapter
             point.status = 'APPROVED' # Auto-approve!
             point.save()
@@ -100,44 +101,44 @@ def assign_points(request):
     
     return render(request, 'dashboard/assign_points.html', {'form': form})
 
-@login_required
-def inbox(request):
-    user = request.user
-    chapter = user.chapter
+# @login_required
+# def inbox(request):
+#     user = request.user
+#     chapter = user.chapter
 
-    # My Action Items
-    my_action_items = HousePoint.objects.filter(
-        chapter=chapter
-    ).filter(
-        Q(assigned_approver=user, status='PENDING') | 
-        Q(submitted_by=user, status='COUNTERED')
-    ).order_by('-date_submitted')
+#     # My Action Items
+#     my_action_items = HousePoint.objects.filter(
+#         chapter=chapter
+#     ).filter(
+#         Q(assigned_approver=user, status='PENDING') | 
+#         Q(submitted_by=user, status='COUNTERED')
+#     ).order_by('-date_submitted')
 
-    # Exec Queue
-    exec_queue = []
-    if user.position.can_manage_points:
-        exec_queue = HousePoint.objects.filter(
-            chapter=chapter,
-            assigned_approver__isnull=True,
-            status='PENDING'
-        ).exclude(submitted_by=user)
+#     # Exec Queue
+#     exec_queue = []
+#     if user.position.can_manage_points:
+#         exec_queue = HousePoint.objects.filter(
+#             chapter=chapter,
+#             assigned_approver__isnull=True,
+#             status='PENDING'
+#         ).exclude(submitted_by=user)
 
-    # HISTORY: All requests involving me (Sender, Recipient, or Approver)
-    # Filter: "Show every active, pending, rejected request... that involves the active user"
-    history_qs = HousePoint.objects.filter(
-        chapter=chapter
-    ).filter(
-        Q(user=user) |                 # I am the recipient
-        Q(submitted_by=user) |         # I submitted it
-        Q(assigned_approver=user)      # I approved/rejected/am assigned to it
-    ).order_by('-updated_at')          # Sort by last action date
+#     # HISTORY: All requests involving me (Sender, Recipient, or Approver)
+#     # Filter: "Show every active, pending, rejected request... that involves the active user"
+#     history_qs = HousePoint.objects.filter(
+#         chapter=chapter
+#     ).filter(
+#         Q(user=user) |                 # I am the recipient
+#         Q(submitted_by=user) |         # I submitted it
+#         Q(assigned_approver=user)      # I approved/rejected/am assigned to it
+#     ).order_by('-updated_at')          # Sort by last action date
 
-    context = {
-        'my_action_items': my_action_items,
-        'exec_queue': exec_queue,
-        'history': history_qs
-    }
-    return render(request, 'dashboard/inbox.html', context)
+#     context = {
+#         'my_action_items': my_action_items,
+#         'exec_queue': exec_queue,
+#         'history': history_qs
+#     }
+#     return render(request, 'dashboard/inbox.html', context)
 
 @login_required
 def manage_point_request(request, pk):
@@ -150,7 +151,7 @@ def manage_point_request(request, pk):
 
     if not (is_approver or is_top2 or is_owner_countering):
         messages.error(request, "You do not have permission to manage this request.")
-        return redirect('inbox')
+        return redirect('points_hub')
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -159,7 +160,10 @@ def manage_point_request(request, pk):
         if action == 'approve':
             point.status = 'APPROVED'
             point.feedback = feedback
-            point.assigned_approver = request.user 
+            if point.submitted_by == request.user:
+                pass
+            else:
+                point.assigned_approver = request.user
             point.save()
             messages.success(request, f"Request approved for {point.amount} points.")
 
@@ -179,8 +183,7 @@ def manage_point_request(request, pk):
                 # SWAP LOGIC: If I am the Approver, send it back to Submitter
                 if point.status == 'PENDING':
                     point.status = 'COUNTERED'
-                    # Note: We keep assigned_approver as the Active, 
-                    # but the Inbox view knows to show it to the Submitter if status is COUNTERED.
+                    point.assigned_approver = request.user
                 
                 # If I am the Submitter (accepting a counter but changing value), send back to Approver
                 elif point.status == 'COUNTERED':
@@ -191,50 +194,120 @@ def manage_point_request(request, pk):
             except ValueError:
                 messages.error(request, "Invalid amount for counter-offer.")
 
-    return redirect('inbox')
+    return redirect('points_hub')
 
-@login_required
-def chapter_ledger(request):
-    user = request.user
-    chapter = user.chapter
+# @login_required
+# def chapter_ledger(request):
+#     user = request.user
+#     chapter = user.chapter
 
-    # Leaderboards (Group by User, Sum Amount)
-    # We only count APPROVED points
-    leaderboard_data = CustomUser.objects.filter(chapter=chapter).annotate(
-        total_points=Coalesce(
-            Sum('points_received__amount', filter=Q(points_received__status='APPROVED')),
-            0
-        )
-    ).order_by('-total_points')
+#     # Leaderboards (Group by User, Sum Amount)
+#     # We only count APPROVED points
+#     leaderboard_data = CustomUser.objects.filter(chapter=chapter).annotate(
+#         total_points=Coalesce(
+#             Sum('points_received__amount', filter=Q(points_received__status='APPROVED')),
+#             0
+#         )
+#     ).order_by('-total_points')
 
-    # Separate into two lists in Python
-    active_leaderboard = [u for u in leaderboard_data if u.status == 'ACT']
-    nm_leaderboard = [u for u in leaderboard_data if u.status == 'NM']
+#     # Separate into two lists in Python
+#     active_leaderboard = [u for u in leaderboard_data if u.status == 'ACT']
+#     nm_leaderboard = [u for u in leaderboard_data if u.status == 'NM']
 
-    # Mother Log (Every request ever)
-    # Only Actives can see the full log
-    full_log = []
-    if user.status != 'NM':
-        full_log = HousePoint.objects.filter(chapter=chapter).order_by('-date_submitted')
-    # NM can see NM logs
-    else:
-        full_log = HousePoint.objects.filter(chapter=chapter, user__status='NM').order_by('-date_submitted')
-    context = {
-        'active_leaderboard': active_leaderboard,
-        'nm_leaderboard': nm_leaderboard,
-        'full_log': full_log
-    }
-    return render(request, 'dashboard/ledger.html', context)
+#     # Mother Log (Every request ever)
+#     # Only Actives can see the full log
+#     full_log = []
+#     if user.status != 'NM':
+#         full_log = HousePoint.objects.filter(chapter=chapter).order_by('-date_submitted')
+#     # NM can see NM logs
+#     else:
+#         full_log = HousePoint.objects.filter(chapter=chapter, user__status='NM').order_by('-date_submitted')
+#     context = {
+#         'active_leaderboard': active_leaderboard,
+#         'nm_leaderboard': nm_leaderboard,
+#         'full_log': full_log
+#     }
+#     return render(request, 'dashboard/ledger.html', context)
 
 @login_required
 def points_hub(request):
-    # Potentially pass 'pending_count' if we want to show badges on the menu
-    # include current points total
     user = request.user
+    chapter = user.chapter
+
+    # Summary Stats
     total_points = user.points_received.filter(status='APPROVED').aggregate(Sum('amount'))['amount__sum'] or 0
 
+    # Inbox Logic
+    my_action_items = HousePoint.objects.filter(
+        chapter=chapter
+    ).filter(
+        Q(assigned_approver=user, status='PENDING') | 
+        Q(submitted_by=user, status='COUNTERED')
+    ).order_by('-date_submitted')
+
+    exec_queue = []
+    if user.position and user.position.can_manage_points:
+        exec_queue = HousePoint.objects.filter(
+            chapter=chapter,
+            assigned_approver__isnull=True,
+            status='PENDING'
+        ).exclude(submitted_by=user)
+
+    # Leaderboards
+    leaderboard_data = CustomUser.objects.filter(chapter=chapter).annotate(
+        total_points_val=Coalesce(
+            Sum('points_received__amount', filter=Q(points_received__status='APPROVED')),
+            0
+        )
+    ).order_by('-total_points_val')
+
+    active_leaderboard = [u for u in leaderboard_data if u.status != 'NM']
+    nm_leaderboard = [u for u in leaderboard_data if u.status == 'NM']
+
+    # MOTHER LOGS (Split & Filtered)
+    
+    # Base Query
+    base_logs = HousePoint.objects.filter(chapter=chapter)
+    
+    # Dropdown Data
+    all_members = CustomUser.objects.filter(chapter=chapter).order_by('first_name')
+    approvers_list = all_members.exclude(status='NM') 
+
+    # A. Apply Filters to Base Query
+    recipient_id = request.GET.get('recipient', '')
+    if recipient_id and recipient_id.isdigit():
+        base_logs = base_logs.filter(user_id=recipient_id)
+        
+    approver_id = request.GET.get('approver', '')
+    if approver_id and approver_id.isdigit():
+        base_logs = base_logs.filter(assigned_approver_id=approver_id)
+
+    # B. Apply Sorting
+    sort_param = request.GET.get('sort', '-date_submitted') 
+    if sort_param in ['amount', '-amount', 'date_submitted', '-date_submitted']:
+        base_logs = base_logs.order_by(sort_param)
+    else:
+        base_logs = base_logs.order_by('-date_submitted')
+
+    # C. Split into Two Separate Lists
+    nm_logs = base_logs.filter(user__status='NM')[:50]
+    active_logs = base_logs.exclude(user__status='NM')[:50]
+
     context = {
-        'total_points': total_points
+        'total_points': total_points,
+        'my_action_items': my_action_items,
+        'exec_queue': exec_queue,
+        'active_leaderboard': active_leaderboard,
+        'nm_leaderboard': nm_leaderboard,
+        
+        'nm_logs': nm_logs,
+        'active_logs': active_logs,
+        
+        'chapter_members': all_members,
+        'approvers_list': approvers_list,
+        'current_recipient': int(recipient_id) if recipient_id.isdigit() else None,
+        'current_approver': int(approver_id) if approver_id.isdigit() else None,
+        'current_sort': sort_param
     }
     
     return render(request, 'dashboard/points_hub.html', context)
