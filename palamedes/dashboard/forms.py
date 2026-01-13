@@ -1,5 +1,5 @@
 from django import forms
-from .models import HousePoint, Due
+from .models import HousePoint, Due, Reimbursement
 from users.models import CustomUser
 
 class DateInput(forms.DateInput):
@@ -58,6 +58,21 @@ class DirectPointAssignmentForm(forms.ModelForm):
         else:
             self.fields['user'].queryset = queryset.filter(status='NM')
             self.fields['user'].label = "Assign to New Member"
+
+class ReimbursementPreApprovalForm(forms.ModelForm):
+    class Meta:
+        model = Reimbursement
+        fields = ['title', 'description'] 
+
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+class RecieptUploadForm(forms.ModelForm):
+    class Meta:
+        model = Reimbursement
+        fields = ['receipt_image', 'total_amount', 'venmo_id']
+
 
 class SingleDueForm(forms.ModelForm):
     # We add a "Type" field to help the UI, though it saves to 'amount'
@@ -156,3 +171,4 @@ class BulkPointForm(forms.Form):
             else:
                 cleaned_data['amount'] = abs(amount)
         return cleaned_data
+

@@ -3,23 +3,40 @@
 <script src="https://js.braintreegateway.com/web/3.97.2/js/venmo.min.js"></script>
 <script src="https://js.braintreegateway.com/web/3.97.2/js/data-collector.min.js"></script>
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
-        <h2 class="text-secondary">
+
+<div class="row align-items-center mb-4">
+    <div class="col-md-4">
+        <h2 class="text-secondary mb-0">
             <a href="{% url 'dashboard' %}" class="text-secondary"><i class="fas fa-arrow-left"></i></a>
             My Financials
         </h2>
     </div>
-    {% if is_treasurer %}
-    <div class="col-md-4 text-right">
-        <a href="{% url 'manage_dues_creation' %}" class="btn btn-info">
-            <i class="fas fa-cog"></i> Manage Dues & Aid
+
+    <div class="col-md-8 text-right">
+        
+        {% if is_treasurer %}
+            <div class="btn-group mr-2">
+                <button type="button" class="btn btn-outline-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-user-shield"></i> Admin Tools
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="{% url 'treasurer_reimbursements' %}">Manage Reimbursements</a>
+                    <a class="dropdown-item" href="{% url 'all_reimbursements' %}">Reimbursement History</a>
+                    <a class="dropdown-item" href="{% url 'manage_dues_creation' %}">Manage Dues & Aid</a>
+                    <a class="dropdown-item" href="{% url 'unpaid_directory' %}">Pending Payments</a>
+                </div>
+            </div>
+        {% endif %}
+
+        <a href="{% url 'reimbursement_list' %}" class="btn btn-info mr-1">
+            <i class="fas fa-list"></i> Your Requests
         </a>
-        <a href="{% url 'unpaid_directory' %}" class="btn btn-info">
-            <i class="fas fa-cog"></i> Pending Payments
+
+        <a href="{% url 'create_reimbursement' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Request
         </a>
+
     </div>
-    {% endif %}
 </div>
 <div class="row mb-5">
     <div class="col-md-12">

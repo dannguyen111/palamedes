@@ -1,0 +1,44 @@
+{% extends "homepage/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="font-weight-bold mb-0">New Reimbursement Request</h3>
+                    <p class="mb-0 text-white-50">Step 1: Get approval before you buy.</p>
+                </div>
+                
+                <div class="card-body p-5">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {{ form|crispy }}
+
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <strong>Note:</strong> Do not buy the item until the Treasurer approves this request.
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary btn-block btn-lg font-weight-bold shadow-sm">
+                                Submit for Approval
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer bg-light text-center py-3">
+                    <a href="{% url 'dashboard' %}" class="text-muted text-decoration-none">
+                        <i class="fas fa-arrow-left mr-1"></i> Cancel and Return to Dashboard
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

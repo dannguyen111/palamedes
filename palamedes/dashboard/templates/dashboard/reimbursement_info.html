@@ -1,0 +1,126 @@
+{% extends "homepage/base.html" %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    
+    <div class="mb-4">
+        <a href="{% url 'reimbursement_list' %}" class="text-secondary text-decoration-none">
+            <i class="fas fa-arrow-left mr-1"></i> Back to My Requests
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0">
+                
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-4">
+                    <h3 class="font-weight-bold text-gray-800 mb-0">{{ item.title }}</h3>
+                    
+                    <div>
+                        {% if item.status == 'APPROVED_BUY' %}
+                            <span class="badge badge-warning px-3 py-2 text-white">
+                                <i class="fas fa-exclamation-circle mr-1"></i> Needs Receipt
+                            </span>
+
+                        {% elif item.status == 'PENDING_SPENDING' or item.status == 'PENDING_REIMBURSEMENT' %}
+                            <span class="badge badge-info px-3 py-2">
+                                <i class="fas fa-clock mr-1"></i> Waiting for approval
+                            </span>
+
+                        {% elif item.status == 'APPROVED_REIMBURSEMENT' %}
+                            <span class="badge badge-success px-3 py-2">
+                                <i class="fas fa-check-circle mr-1"></i> Reimbursed
+                            </span>
+
+                        {% elif item.status == 'REJECTED_REIMBURSEMENT' %}
+                            <span class="badge badge-danger px-3 py-2">
+                                <i class="fas fa-times-circle mr-1"></i> Rejected Reimbursement
+                            </span>
+
+                        {% elif item.status == 'REJECTED_BUY' %}
+                            <span class="badge badge-danger px-3 py-2">
+                                <i class="fas fa-times-circle mr-1"></i> Rejected Spending
+                            </span>
+                        {% endif %}
+                    </div>
+                    </div>
+
+                <div class="card-body p-5">
+                    <div class="row">
+                        <div class="col-md-7 border-right">
+                            
+                            <div class="mb-4">
+                                <h6 class="text-uppercase text-secondary font-weight-bold text-xs">Description</h6>
+                                <p class="text-dark lead">
+                                    {{ item.description|linebreaks }}
+                                </p>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <h6 class="text-uppercase text-secondary font-weight-bold text-xs">Venmo ID</h6>
+                                    <p class="font-weight-bold text-info">
+                                        {% if item.venmo_id %}
+                                            {{ item.venmo_id }}
+                                        {% else %}
+                                            <span class="text-muted font-weight-normal">Not provided</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6 class="text-uppercase text-secondary font-weight-bold text-xs">Date Submitted</h6>
+                                    <p class="text-dark">{{ item.created_at|date:"M d, Y" }}</p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="col-md-5 pl-md-5">
+                            
+                            <div class="mb-4">
+                                <h6 class="text-uppercase text-secondary font-weight-bold text-xs">Amount Requested</h6>
+                                <h2 class="display-4 font-weight-bold text-success">
+                                    ${{ item.total_amount|floatformat:2 }}
+                                </h2>
+                            </div>
+
+                            <div class="mb-4">
+                                <h6 class="text-uppercase text-secondary font-weight-bold text-xs mb-3">Receipt Info</h6>
+                                
+                                {% if item.receipt_image %}
+                                    <div class="card">
+                                        <a href="{{ item.receipt_image.url }}" target="_blank">
+                                            <img src="{{ item.receipt_image.url }}" class="card-img-top img-fluid" alt="Receipt">
+                                        </a>
+                                        <div class="card-footer text-center bg-light">
+                                            <a href="{{ item.receipt_image.url }}" target="_blank" class="small text-muted">
+                                                <i class="fas fa-expand mr-1"></i> Click to enlarge
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-secondary">
+                                        <i class="fas fa-camera mr-2"></i> No receipt uploaded yet.
+                                    </div>
+                                    
+                                    {% if item.status == 'APPROVED_BUY' and user == item.requestor %}
+                                        <a href="{% url 'create_upload_receipt' item.pk %}" class="btn btn-primary btn-block shadow-sm">
+                                            <i class="fas fa-upload mr-1"></i> Upload Receipt Now
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light text-center py-3">
+                    <small class="text-muted">Request ID: #{{ item.id }} • Created by {{ item.requestor.first_name }} {{ item.requestor.last_name }}</small>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

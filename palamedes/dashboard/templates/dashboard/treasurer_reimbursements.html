@@ -1,0 +1,43 @@
+{% extends "homepage/base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Requests: </h2>
+    <div class="row">
+        {% for item in items %}
+        <div class="col-md-6">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.title }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ item.requestor.first_name }} {{ item.requestor.last_name }}</h6>
+                    <p class="card-text">
+                        <strong>Spent:</strong> ${{ item.total_amount }} <br>
+                    </p>
+                    <p class="card-text">
+                        <strong>Venmo id: </strong> {{ item.venmo_id }} <br>
+                    </p>
+                    {% if item.receipt_image %}
+                    <a href="{{ item.receipt_image.url }}" target="_blank" class="btn btn-sm btn-info mb-3">View Receipt</a>
+                    {% endif %}
+                    <div class="border-top pt-3">
+                        {% if item.status == 'PENDING_SPENDING' %}
+                        <a href="{% url 'approve_reimbursement' item.pk %}" class="btn btn-success btn-block">Approve Purchase</a>
+                        <a href="{% url 'reject_reimbursement' item.pk %}" class="btn btn-danger btn-block">Reject Purchase</a>
+                        {% elif item.status == 'PENDING_REIMBURSEMENT' %}
+                        <a href="{% url 'approve_reimbursement' item.pk %}" class="btn btn-success btn-block">Approve Reimbursement</a>
+                        <a href="{% url 'reject_reimbursement' item.pk %}" class="btn btn-danger btn-block">Reject Reimbursement</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-muted ml-3">No pending reimbursements.</p>
+        {% endfor %}
+    </div>
+    <div class="card-footer bg-light text-center py-3">
+        <a href="{% url 'dashboard' %}" class="text-muted text-decoration-none">
+            <i class="fas fa-arrow-left mr-1"></i> Cancel and Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

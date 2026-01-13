@@ -22,4 +22,12 @@ urlpatterns = [
     path('directory/', views.directory, name='brother_directory'),
     path('directory/member/<int:pk>/', views.brother_profile, name='brother_profile'),
     path('points/manage/', views.manage_points_creation, name='manage_points_creation'),
+    path('reimbursements/', views.reimbursement_list, name='reimbursement_list'),
+    path('reimbursements/new/', views.create_pre_buy, name='create_reimbursement'),
+    path('reimbursements/upload/<int:pk>/', views.create_upload_receipt, name='upload_receipt'),
+    path('reimbursements/manage/', views.treasurer_reimbursements, name='treasurer_reimbursements'),
+    path('reimbursements/approve/<int:pk>/', views.approve_reimbursement, name='approve_reimbursement'),
+    path('reimbursements/reject/<int:pk>/', views.reject_reimbursement, name='reject_reimbursement'),
+    path('reimbursements/all_reimbursements', views.all_reimbursements, name='all_reimbursements'),
+    path('reimbursements/info/<int:pk>/', views.get_reimbursement_info, name='reimbursement_info'),
 ]

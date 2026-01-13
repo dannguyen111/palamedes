@@ -92,15 +92,18 @@
                     </div>
 
                     <hr>
-                    <h6 class="text-secondary">Pledge Class Filter (Optional)</h6>
-                    <p class="small text-muted">Only fill this out if you selected "Specific Pledge Class" above.</p>
+                    <div id="pledge_class" style="display: none;">
+                        <hr>
+                        <h6 class="text-secondary">Pledge Class Filter</h6>
+                        <p class="small text-muted">Required when "Specific Pledge Class" is selected.</p>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            {{ bulk_form.pledge_semester|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6">
-                            {{ bulk_form.pledge_year|as_crispy_field }}
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ bulk_form.pledge_semester|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ bulk_form.pledge_year|as_crispy_field }}
+                            </div>
                         </div>
                     </div>
 
@@ -111,4 +114,25 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        const target_group = document.getElementById('id_target_group'); 
+        const pledge_class = document.getElementById('pledge_class');
+
+        function toggleFilter(){
+            if (target_group.value == 'PLEDGE_CLASS'){
+                pledge_class.style.display = 'block';
+            }
+            else {
+                pledge_class.style.display = 'none';
+            }
+
+        }
+
+        target_group.addEventListener('change', toggleFilter);
+        toggleFilter();
+    });
+</script>
+
 {% endblock %}

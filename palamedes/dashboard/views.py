@@ -7,8 +7,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
-from .models import HousePoint, Due, Task, Announcement
-from .forms import NMPointRequestForm, ActivePointRequestForm, DirectPointAssignmentForm, SingleDueForm, BulkDueForm, BulkPointForm
+from .models import HousePoint, Due, Task, Announcement, Reimbursement
+from .forms import NMPointRequestForm, ActivePointRequestForm, DirectPointAssignmentForm, SingleDueForm, BulkDueForm, BulkPointForm, ReimbursementPreApprovalForm, RecieptUploadForm 
 from users.models import CustomUser
 from django.http import JsonResponse
 
@@ -586,12 +586,13 @@ def payment_success(request):
 
 @login_required
 def make_payment_treasurer(request, pk):
-    due = get_object_or_404(Due, pk=pk)
-    context = {
-        'due' : due
-    }
+    if request.user.position.can_manage_finance:
+        due = get_object_or_404(Due, pk=pk)
+        context = {
+            'due' : due
+        }
 
-    return render(request, 'dashboard/paid_treasurer.html', context)
+        return render(request, 'dashboard/paid_treasurer.html', context)
 
 @login_required
 def mark_paid(request, pk):
@@ -653,42 +654,44 @@ def directory(request):
 
 @login_required
 def unpaid_directory(request):
-    user = request.user
-    chapter = request.user.chapter 
-    members = CustomUser.objects.filter(dues__is_paid = False, chapter = chapter).distinct() \
-        .annotate(total_dues=Sum('dues__amount')
-    )
+    if request.user.position.can_manage_finance:
+        user = request.user
+        chapter = request.user.chapter 
+        members = CustomUser.objects.filter(dues__is_paid = False, chapter = chapter).distinct() \
+            .annotate(total_dues=Sum('dues__amount')
+        )
 
-    member_filter = request.GET.get('filter')
-    if member_filter:
-        members = members.filter(
-            Q(first_name__icontains = member_filter) |
-            Q(last_name__icontains = member_filter) |
-            Q(major__icontains = member_filter) |
-            Q(hometown__icontains = member_filter)
-    )
+        member_filter = request.GET.get('filter')
+        if member_filter:
+            members = members.filter(
+                Q(first_name__icontains = member_filter) |
+                Q(last_name__icontains = member_filter) |
+                Q(major__icontains = member_filter) |
+                Q(hometown__icontains = member_filter)
+        )
 
-    status_filter = request.GET.get('status')
-    if status_filter:
-        members = members.filter(status=status_filter)
+        status_filter = request.GET.get('status')
+        if status_filter:
+            members = members.filter(status=status_filter)
 
-    context = {
-        'members' : members, 
-        'search_query' : member_filter or ""
-    }
+        context = {
+            'members' : members, 
+            'search_query' : member_filter or ""
+        }
 
-    return render(request, 'dashboard/unpaid_directory.html', context)
+        return render(request, 'dashboard/unpaid_directory.html', context)
 
 def dues_member(request, pk):
-    brother = get_object_or_404(CustomUser, pk=pk)
-    dues = Due.objects.filter(assigned_to=brother).order_by('is_paid', 'due_date')
+    if request.user.position.can_manage_finance:
+        brother = get_object_or_404(CustomUser, pk=pk)
+        dues = Due.objects.filter(assigned_to=brother).order_by('is_paid', 'due_date')
 
-    context = {
-        'brother' : brother, 
-        'dues' : dues
-    }
+        context = {
+            'brother' : brother, 
+            'dues' : dues
+        }
 
-    return render(request, 'dashboard/member_dues_details.html', context)
+        return render(request, 'dashboard/member_dues_details.html', context)
 
 
 
@@ -768,3 +771,111 @@ def manage_points_creation(request):
             return redirect('dashboard')
 
     return render(request, 'dashboard/manage_points.html', {'form': form})
+
+@login_required
+def reimbursement_list(request):
+    requests = Reimbursement.objects.filter(requestor = request.user)
+
+    context = {
+        'requests' : requests
+    }
+
+    return render(request, 'dashboard/reimbursement_list.html', context)
+
+@login_required
+def create_pre_buy(request):
+    if request.method == 'POST':
+        buy_form = ReimbursementPreApprovalForm(request.POST) 
+
+        if buy_form.is_valid():
+            req = buy_form.save(commit = False)
+            req.requestor = request.user
+            req.status = 'PENDING_SPENDING'
+            req.save()
+            messages.success(request, f'Your request to buy the following items has been successfully submitted. Please wait for the approval.')
+            return redirect('reimbursement_list')
+    else:
+        buy_form = ReimbursementPreApprovalForm()
+
+    return render(request, 'dashboard/reimbursement_form.html', {'form': buy_form, 'title': 'New Request'})
+
+@login_required
+def create_upload_receipt(request, pk):
+    req = get_object_or_404(Reimbursement, pk=pk, requestor = request.user)
+    if request.method == 'POST':
+        upload_form = RecieptUploadForm(request.POST, request.FILES, instance = req)
+
+        if upload_form.is_valid():
+            req = upload_form.save(commit = False) 
+            req.status = 'PENDING_REIMBURSEMENT'
+            req.save()
+
+            messages.success(request, f'Your request for the reimbursement has been successfully submitted. Please wait for the approval')
+            return redirect('reimbursement_list')
+    else:
+        upload_form = RecieptUploadForm(instance = req)
+
+    context = {
+        'form' : upload_form,
+        'title' : f'Upload recipt for {req.title}' 
+    } 
+    return render(request, 'dashboard/reimbursement_form.html', context)
+
+@login_required
+def treasurer_reimbursements(request):
+    if request.user.position.can_manage_finance:
+        items = Reimbursement.objects.filter(status__in=['PENDING_SPENDING', 'PENDING_REIMBURSEMENT']
+        ).order_by('-created_at')
+
+        context = {
+            'items' : items
+        }
+
+        return render(request ,'dashboard/treasurer_reimbursements.html', context)
+
+@login_required
+def approve_reimbursement(request, pk):
+    if request.user.position.can_manage_finance:
+        req = get_object_or_404(Reimbursement, pk=pk)
+        if req.status == 'PENDING_SPENDING':
+            req.status = 'APPROVED_BUY'
+            messages.success(request, f"Approved spending for {req.requestor.first_name}")
+        elif req.status == 'PENDING_REIMBURSEMENT':
+            req.status = 'APPROVED_REIMBURSEMENT'
+            messages.success(request, f"Approved reimbursement for {req.requestor.first_name}")
+        req.save()
+        return redirect('treasurer_reimbursements')
+
+@login_required
+def all_reimbursements(request):
+    if request.user.position.can_manage_finance:
+        items = Reimbursement.objects.all()
+
+        context = {
+            'items' : items
+        }
+
+        return render(request, 'dashboard/all_reimbursements.html', context)
+
+@login_required
+def reject_reimbursement(request, pk):
+    if request.user.position.can_manage_finance:
+        req = get_object_or_404(Reimbursement, pk=pk)
+        if req.status == 'PENDING_SPENDING':
+            req.status = 'REJECTED_BUY'
+            messages.success(request, f"Rejected spending for {req.requestor.first_name}")
+        elif req.status == 'PENDING_REIMBURSEMENT':
+            req.status = 'REJECTED_REIMBURSEMNET'
+            messages.success(request, f"Rejected reimbursement for {req.requestor.first_name}")
+        req.save()
+        return redirect('treasurer_reimbursements')
+
+@login_required
+def get_reimbursement_info(request, pk):
+    if request.user.position.can_manage_finance:
+        req = get_object_or_404(Reimbursement, pk = pk)
+        context = {
+            'item' : req
+        }
+
+    return render(request, 'dashboard/reimbursement_info.html', context)
