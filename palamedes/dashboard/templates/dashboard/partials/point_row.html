@@ -3,10 +3,14 @@
         <h5 class="mb-1">
             {% if point.status == 'COUNTERED' %}
             <span class="badge badge-warning">Counter-Offer</span>
-            {% endif %}
+            {{ point.assigned_approver.first_name }} {{ point.assigned_approver.last_name }}
+            <small class="text-muted">counter-offered {{ point.amount }} pts</small>
+            {% else %}
             {{ point.submitted_by.first_name }} {{ point.submitted_by.last_name }}
             <small class="text-muted">requested {{ point.amount }} pts</small>
+            {% endif %}
         </h5>
+
         <p class="mb-1">{{ point.description }}</p>
         <small class="text-muted">Date: {{ point.date_for }} | Feedback: {{ point.feedback|default:"None" }}</small>
     </div>

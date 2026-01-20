@@ -1,4 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
+import stripe
+from decimal import Decimal
+from django.conf import settings
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q
@@ -6,6 +10,7 @@ from django.db.models.functions import Coalesce
 from .models import HousePoint, Due, Task, Announcement
 from .forms import NMPointRequestForm, ActivePointRequestForm, DirectPointAssignmentForm, SingleDueForm, BulkDueForm, BulkPointForm
 from users.models import CustomUser
+from django.http import JsonResponse
 
 @login_required
 def dashboard(request):
@@ -85,6 +90,7 @@ def assign_points(request):
         if form.is_valid():
             point = form.save(commit=False)
             point.submitted_by = request.user
+            point.assigned_approver = request.user
             point.chapter = request.user.chapter
             point.status = 'APPROVED' # Auto-approve!
             point.save()
@@ -95,44 +101,44 @@ def assign_points(request):
     
     return render(request, 'dashboard/assign_points.html', {'form': form})
 
-@login_required
-def inbox(request):
-    user = request.user
-    chapter = user.chapter
+# @login_required
+# def inbox(request):
+#     user = request.user
+#     chapter = user.chapter
 
-    # My Action Items
-    my_action_items = HousePoint.objects.filter(
-        chapter=chapter
-    ).filter(
-        Q(assigned_approver=user, status='PENDING') | 
-        Q(submitted_by=user, status='COUNTERED')
-    ).order_by('-date_submitted')
+#     # My Action Items
+#     my_action_items = HousePoint.objects.filter(
+#         chapter=chapter
+#     ).filter(
+#         Q(assigned_approver=user, status='PENDING') | 
+#         Q(submitted_by=user, status='COUNTERED')
+#     ).order_by('-date_submitted')
 
-    # Exec Queue
-    exec_queue = []
-    if user.position.can_manage_points:
-        exec_queue = HousePoint.objects.filter(
-            chapter=chapter,
-            assigned_approver__isnull=True,
-            status='PENDING'
-        ).exclude(submitted_by=user)
+#     # Exec Queue
+#     exec_queue = []
+#     if user.position.can_manage_points:
+#         exec_queue = HousePoint.objects.filter(
+#             chapter=chapter,
+#             assigned_approver__isnull=True,
+#             status='PENDING'
+#         ).exclude(submitted_by=user)
 
-    # HISTORY: All requests involving me (Sender, Recipient, or Approver)
-    # Filter: "Show every active, pending, rejected request... that involves the active user"
-    history_qs = HousePoint.objects.filter(
-        chapter=chapter
-    ).filter(
-        Q(user=user) |                 # I am the recipient
-        Q(submitted_by=user) |         # I submitted it
-        Q(assigned_approver=user)      # I approved/rejected/am assigned to it
-    ).order_by('-updated_at')          # Sort by last action date
+#     # HISTORY: All requests involving me (Sender, Recipient, or Approver)
+#     # Filter: "Show every active, pending, rejected request... that involves the active user"
+#     history_qs = HousePoint.objects.filter(
+#         chapter=chapter
+#     ).filter(
+#         Q(user=user) |                 # I am the recipient
+#         Q(submitted_by=user) |         # I submitted it
+#         Q(assigned_approver=user)      # I approved/rejected/am assigned to it
+#     ).order_by('-updated_at')          # Sort by last action date
 
-    context = {
-        'my_action_items': my_action_items,
-        'exec_queue': exec_queue,
-        'history': history_qs
-    }
-    return render(request, 'dashboard/inbox.html', context)
+#     context = {
+#         'my_action_items': my_action_items,
+#         'exec_queue': exec_queue,
+#         'history': history_qs
+#     }
+#     return render(request, 'dashboard/inbox.html', context)
 
 @login_required
 def manage_point_request(request, pk):
@@ -145,7 +151,7 @@ def manage_point_request(request, pk):
 
     if not (is_approver or is_top2 or is_owner_countering):
         messages.error(request, "You do not have permission to manage this request.")
-        return redirect('inbox')
+        return redirect('points_hub')
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -154,7 +160,10 @@ def manage_point_request(request, pk):
         if action == 'approve':
             point.status = 'APPROVED'
             point.feedback = feedback
-            point.assigned_approver = request.user 
+            if point.submitted_by == request.user:
+                pass
+            else:
+                point.assigned_approver = request.user
             point.save()
             messages.success(request, f"Request approved for {point.amount} points.")
 
@@ -174,8 +183,7 @@ def manage_point_request(request, pk):
                 # SWAP LOGIC: If I am the Approver, send it back to Submitter
                 if point.status == 'PENDING':
                     point.status = 'COUNTERED'
-                    # Note: We keep assigned_approver as the Active, 
-                    # but the Inbox view knows to show it to the Submitter if status is COUNTERED.
+                    point.assigned_approver = request.user
                 
                 # If I am the Submitter (accepting a counter but changing value), send back to Approver
                 elif point.status == 'COUNTERED':
@@ -186,50 +194,120 @@ def manage_point_request(request, pk):
             except ValueError:
                 messages.error(request, "Invalid amount for counter-offer.")
 
-    return redirect('inbox')
+    return redirect('points_hub')
 
-@login_required
-def chapter_ledger(request):
-    user = request.user
-    chapter = user.chapter
+# @login_required
+# def chapter_ledger(request):
+#     user = request.user
+#     chapter = user.chapter
 
-    # Leaderboards (Group by User, Sum Amount)
-    # We only count APPROVED points
-    leaderboard_data = CustomUser.objects.filter(chapter=chapter).annotate(
-        total_points=Coalesce(
-            Sum('points_received__amount', filter=Q(points_received__status='APPROVED')),
-            0
-        )
-    ).order_by('-total_points')
+#     # Leaderboards (Group by User, Sum Amount)
+#     # We only count APPROVED points
+#     leaderboard_data = CustomUser.objects.filter(chapter=chapter).annotate(
+#         total_points=Coalesce(
+#             Sum('points_received__amount', filter=Q(points_received__status='APPROVED')),
+#             0
+#         )
+#     ).order_by('-total_points')
 
-    # Separate into two lists in Python
-    active_leaderboard = [u for u in leaderboard_data if u.status == 'ACT']
-    nm_leaderboard = [u for u in leaderboard_data if u.status == 'NM']
+#     # Separate into two lists in Python
+#     active_leaderboard = [u for u in leaderboard_data if u.status == 'ACT']
+#     nm_leaderboard = [u for u in leaderboard_data if u.status == 'NM']
 
-    # Mother Log (Every request ever)
-    # Only Actives can see the full log
-    full_log = []
-    if user.status != 'NM':
-        full_log = HousePoint.objects.filter(chapter=chapter).order_by('-date_submitted')
-    # NM can see NM logs
-    else:
-        full_log = HousePoint.objects.filter(chapter=chapter, user__status='NM').order_by('-date_submitted')
-    context = {
-        'active_leaderboard': active_leaderboard,
-        'nm_leaderboard': nm_leaderboard,
-        'full_log': full_log
-    }
-    return render(request, 'dashboard/ledger.html', context)
+#     # Mother Log (Every request ever)
+#     # Only Actives can see the full log
+#     full_log = []
+#     if user.status != 'NM':
+#         full_log = HousePoint.objects.filter(chapter=chapter).order_by('-date_submitted')
+#     # NM can see NM logs
+#     else:
+#         full_log = HousePoint.objects.filter(chapter=chapter, user__status='NM').order_by('-date_submitted')
+#     context = {
+#         'active_leaderboard': active_leaderboard,
+#         'nm_leaderboard': nm_leaderboard,
+#         'full_log': full_log
+#     }
+#     return render(request, 'dashboard/ledger.html', context)
 
 @login_required
 def points_hub(request):
-    # Potentially pass 'pending_count' if we want to show badges on the menu
-    # include current points total
     user = request.user
+    chapter = user.chapter
+
+    # Summary Stats
     total_points = user.points_received.filter(status='APPROVED').aggregate(Sum('amount'))['amount__sum'] or 0
 
+    # Inbox Logic
+    my_action_items = HousePoint.objects.filter(
+        chapter=chapter
+    ).filter(
+        Q(assigned_approver=user, status='PENDING') | 
+        Q(submitted_by=user, status='COUNTERED')
+    ).order_by('-date_submitted')
+
+    exec_queue = []
+    if user.position and user.position.can_manage_points:
+        exec_queue = HousePoint.objects.filter(
+            chapter=chapter,
+            assigned_approver__isnull=True,
+            status='PENDING'
+        ).exclude(submitted_by=user)
+
+    # Leaderboards
+    leaderboard_data = CustomUser.objects.filter(chapter=chapter).annotate(
+        total_points_val=Coalesce(
+            Sum('points_received__amount', filter=Q(points_received__status='APPROVED')),
+            0
+        )
+    ).order_by('-total_points_val')
+
+    active_leaderboard = [u for u in leaderboard_data if u.status != 'NM']
+    nm_leaderboard = [u for u in leaderboard_data if u.status == 'NM']
+
+    # MOTHER LOGS (Split & Filtered)
+    
+    # Base Query
+    base_logs = HousePoint.objects.filter(chapter=chapter)
+    
+    # Dropdown Data
+    all_members = CustomUser.objects.filter(chapter=chapter).order_by('first_name')
+    approvers_list = all_members.exclude(status='NM') 
+
+    # A. Apply Filters to Base Query
+    recipient_id = request.GET.get('recipient', '')
+    if recipient_id and recipient_id.isdigit():
+        base_logs = base_logs.filter(user_id=recipient_id)
+        
+    approver_id = request.GET.get('approver', '')
+    if approver_id and approver_id.isdigit():
+        base_logs = base_logs.filter(assigned_approver_id=approver_id)
+
+    # B. Apply Sorting
+    sort_param = request.GET.get('sort', '-date_submitted') 
+    if sort_param in ['amount', '-amount', 'date_submitted', '-date_submitted']:
+        base_logs = base_logs.order_by(sort_param)
+    else:
+        base_logs = base_logs.order_by('-date_submitted')
+
+    # C. Split into Two Separate Lists
+    nm_logs = base_logs.filter(user__status='NM')[:50]
+    active_logs = base_logs.exclude(user__status='NM')[:50]
+
     context = {
-        'total_points': total_points
+        'total_points': total_points,
+        'my_action_items': my_action_items,
+        'exec_queue': exec_queue,
+        'active_leaderboard': active_leaderboard,
+        'nm_leaderboard': nm_leaderboard,
+        
+        'nm_logs': nm_logs,
+        'active_logs': active_logs,
+        
+        'chapter_members': all_members,
+        'approvers_list': approvers_list,
+        'current_recipient': int(recipient_id) if recipient_id.isdigit() else None,
+        'current_approver': int(approver_id) if approver_id.isdigit() else None,
+        'current_sort': sort_param
     }
     
     return render(request, 'dashboard/points_hub.html', context)
@@ -288,7 +366,7 @@ def _helper_bulk_transaction(request, bulk_form):
 
         count = 0 
         for u in users_to_charge:
-            Dues.objects.create(
+            Due.objects.create(
                 title=data['title'],
                 amount=data['amount'],
                 due_date=data['due_date'],
@@ -350,22 +428,203 @@ def manage_dues_creation(request):
     }
     return render(request, 'dashboard/manage_dues.html', context)
 
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
 @login_required
-def pay_due(request, pk):
+def payment_page(request, pk):
+    due = get_object_or_404(Due, pk = pk, assigned_to = request.user)
+
+    context = {
+        'due' : due, 
+        'stripe_api_key' : stripe.api_key
+    }
+
+    return render(request, 'dashboard/payment_page.html', context)
+
+@login_required
+def create_bulk_checkout_session(request):
+    if request.POST:
+        ids = request.POST.getlist('due_ids')
+
+        dues = Due.objects.filter(pk__in = ids, assigned_to = request.user)
+
+        stripe_line_items = []
+        valid_due_ids = []
+
+        for due in dues:
+            temp = {
+                        'price_data' : {
+                            'currency' : 'usd',
+                            'product_data' : {
+                                'name' : due.title
+                            },
+                            'unit_amount_decimal' : due.amount * 100
+                        }, 
+                        'quantity' : 1,
+                    }
+
+            stripe_line_items.append(temp)
+            valid_due_ids.append(str(due.id))
+
+        try:
+            bulk_checkout = stripe.checkout.Session.create(
+                line_items = stripe_line_items,
+                mode = 'payment',
+                metadata = {
+                    'user_id' : request.user.id,
+                    'payment_type': 'bulk_payment',
+                    'due_ids_str': ",".join(valid_due_ids)
+                },
+                success_url=request.build_absolute_uri(reverse('payment_success')) + '?session_id={CHECKOUT_SESSION_ID}',
+                cancel_url=request.build_absolute_uri(reverse('dashboard')),
+            )
+            return redirect(bulk_checkout.url, code = 303)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return redirect('dashboard')
+
+
+
+@login_required
+def process_payment(request, pk):
+    if request.POST:
+        due = get_object_or_404(Due, pk = pk, assigned_to = request.user)
+
+        amount_str = request.POST.get('due_amount') 
+        amount = int(float(amount_str) * 100)
+        title = due.title
+
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                line_items=[
+                    {
+                        'price_data' : {
+                            'currency' : 'usd',
+                            'product_data' : {
+                                'name' : title
+                            },
+                            'unit_amount_decimal' : amount
+                        }, 
+                        'quantity' : 1,
+                    }
+                ],
+
+                mode='payment',
+                metadata={
+                    'due_id': due.pk,      
+                    'user_id': request.user.id,
+                    'payment_type': 'single'
+                },
+                success_url=request.build_absolute_uri(reverse('payment_success')) + '?session_id={CHECKOUT_SESSION_ID}',
+                cancel_url=request.build_absolute_uri(reverse('payment_page', args=[pk])),
+
+            )
+
+            return redirect(checkout_session.url, code = 303)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return redirect('dashboard')
+
+@login_required
+def payment_success(request):
+    session_id = request.GET.get('session_id')
+    if not session_id:
+        messages.error(request, "Missing payment session information. Please try again.")
+        return redirect('dashboard')
+
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except Exception:
+        messages.error(request, "There was a problem verifying your payment. Please contact support if this persists.")
+        return redirect('dashboard')
+
+    processed_sessions = request.session.get('processed_sessions', [])
+
+    if session.metadata['payment_type'] == 'bulk_payment':
+        due_ids_str = session.metadata.get('due_ids_str')
+        if due_ids_str:
+            due_ids = due_ids_str.split(',')
+
+            dues_paid = Due.objects.filter(pk__in = due_ids, assigned_to = request.user) 
+
+            for due in dues_paid:   
+                due.is_paid = True
+                due.amount = 0
+                due.save()
+            return render(request, 'dashboard/successful_payment.html', {'dues': dues_paid})
+
+    amount_paid = Decimal(session.amount_total) / Decimal(100)
+    due_id = session.metadata['due_id']
+
+    due = get_object_or_404(Due, pk = due_id)
+
+    context = {
+    'due':due,
+    'amount_paid': amount_paid
+    }
+
+
+    if session_id in processed_sessions:
+        return render(request, 'dashboard/successful_payment.html', context) 
+
+    processed_sessions.append(session_id)
+    request.session['processed_sessions'] = processed_sessions
+    request.session.modified = True
+
+    due.amount -= amount_paid
+
+    if due.amount <= 0:
+        due.is_paid = True
+    due.save()
+
+
+    return render(request, 'dashboard/successful_payment.html', context)
+
+@login_required
+def make_payment_treasurer(request, pk):
+    due = get_object_or_404(Due, pk=pk)
+    context = {
+        'due' : due
+    }
+
+    return render(request, 'dashboard/paid_treasurer.html', context)
+
+@login_required
+def mark_paid(request, pk):
     due = get_object_or_404(Due, pk=pk)
     
-    # Ideally, this integrates with Stripe/Venmo
-    # For now, we just mark it as paid (Positions with permission only) 
-    # OR create a "Mark Paid" request logic later.
-    
     if request.user.position.can_manage_finance:
-        due.is_paid = True
+        amount = request.POST.get('amount')
+        if not amount:
+            payment_amount = due.amount
+        else:
+            try:
+                payment_amount = int(amount)
+            except (TypeError, ValueError):
+                messages.error(request, "Invalid payment amount. Please enter a whole number.")
+                return redirect('brothers_due', due.assigned_to.pk)
+            if payment_amount < 0:
+                messages.error(request, "Invalid payment amount. Amount cannot be negative.")
+                return redirect('brothers_due', due.assigned_to.pk)
+
+        due.amount -= payment_amount
+
+        if due.amount <= 0:
+            due.is_paid = True
         due.save()
-        messages.success(request, "Marked as Paid.")
+
+        if due.amount <= 0:
+            messages.success(request, "Marked as Paid.")
+        else:
+            messages.success(request, f'The due has been updated. {due.assigned_to.first_name }  {due.assigned_to.last_name } still has {due.amount} left to pay.')
     else:
         messages.error(request, "Only people with permission can verify payments.")
         
-    return redirect('dues_dashboard')
+    return redirect('brothers_due', due.assigned_to.pk)
 
 @login_required
 def directory(request):
@@ -419,6 +678,19 @@ def unpaid_directory(request):
     }
 
     return render(request, 'dashboard/unpaid_directory.html', context)
+
+def dues_member(request, pk):
+    brother = get_object_or_404(CustomUser, pk=pk)
+    dues = Due.objects.filter(assigned_to=brother).order_by('is_paid', 'due_date')
+
+    context = {
+        'brother' : brother, 
+        'dues' : dues
+    }
+
+    return render(request, 'dashboard/member_dues_details.html', context)
+
+
 
 @login_required
 def brother_profile(request, pk):

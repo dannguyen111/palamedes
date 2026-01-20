@@ -1,0 +1,60 @@
+{% extends "homepage/base.html" %}
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="text-center mb-4">
+                <h2 class="font-weight-bold">Make a Payment</h2>
+                <p class="text-muted">Choose how you would like to pay.</p>
+            </div>
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h5 class="mb-0 opacity-75">PAYING FOR</h5>
+                    <h3 class="font-weight-bold mt-2">{{ due.title }}</h3>
+                    <div class="badge badge-light text-primary px-3 py-2 mt-2" style="font-size: 1.2rem;">
+                        Due: ${{ due.amount }}
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{% url 'create_checkout_session' due.pk %}" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="due_amount" value="{{ due.amount }}">
+                        <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm mb-3 font-weight-bold">
+                            Pay Full Balance (${{ due.amount }})
+                        </button>
+                    </form>
+                    <div class="text-center position-relative my-4">
+                        <hr>
+                        <span class="position-absolute bg-white px-3 text-muted" style="top: -12px; left: 50%; transform: translateX(-50%);">
+                            OR
+                        </span>
+                    </div>
+                    <form action="{% url 'create_checkout_session' due.pk %}" method="POST">
+                        {% csrf_token %}
+                        <label class="font-weight-bold text-muted small text-uppercase">Enter Custom Amount</label>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-light border-right-0 font-weight-bold">$</span>
+                            </div>
+                            <input type="number" name="due_amount" class="form-control form-control-lg border-left-0" placeholder="0.00" step="0.01" min="1.00" max="{{ due.amount }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary btn-block btn-lg shadow-sm">
+                            Pay Custom Amount
+                        </button>
+                    </form>
+                </div>
+                <div class="card-footer bg-light text-center py-3">
+                    <small class="text-muted">
+                        <i class="fas fa-lock mr-1"></i> Payments secured by <strong>Stripe</strong>
+                    </small>
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <a href="{% url 'dashboard' %}" class="text-muted text-decoration-none">
+                    <i class="fas fa-arrow-left mr-1"></i> Cancel and Return to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
