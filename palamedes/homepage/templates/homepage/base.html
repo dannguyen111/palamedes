@@ -17,38 +17,55 @@
 </head>
 
 <body class="d-flex flex-column min-vh-100">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 sticky-top">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 sticky-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand"
-                href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}">
-                Palamedes
+            <a class="navbar-brand font-weight-bold" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}">
+                <i class="bi bi-shield-shaded mr-1"></i> Palamedes
             </a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle"
+                aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
+
+            <div class="collapse navbar-collapse" id="navbarToggle">
                 <ul class="navbar-nav mr-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
                 </ul>
 
-                <ul class="navbar-nav ml-auto"> {% if user.is_authenticated %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle font-weight-bold text-white" href="#" id="userMenu"
+                <ul class="navbar-nav ml-auto align-items-center">
+                    {% if user.is_authenticated %}
+
+                    <li class="nav-item dropdown mr-2">
+                        <a class="nav-link dropdown-toggle btn btn-outline-light border-0 text-white font-weight-bold" href="#" id="quickActions"
                             role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            {% if user.image %}
-                            <img src="{{ user.image.url }}" class="rounded-circle mr-1"
-                                style="width: 30px; height: 30px; object-fit: cover;">
-                            {% endif %}
-                            {{ user.username }}
+                            <i class="bi bi-lightning-fill text-warning"></i> Actions
                         </a>
-                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userMenu">
-                            <a class="dropdown-item" href="{% url 'profile' %}">
-                                My Profile
-                            </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow border-0" aria-labelledby="quickActions">
+                            <h6 class="dropdown-header text-uppercase text-muted small font-weight-bold">Create New</h6>
+                            <a class="dropdown-item" href="{% url 'submit_points' %}"><i class="bi bi-star text-warning mr-2"></i> Point Request</a>
 
+                            {% if user.position.can_manage_finance %}
                             <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{% url 'manage_dues_creation' %}"><i class="bi bi-cash-coin text-success mr-2"></i> Create
+                                Charge</a>
+                            {% endif %}
 
+                            {% if user.position.can_manage_points %}
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{% url 'assign_points' %}"><i class="bi bi-check2-circle text-primary mr-2"></i> Assign
+                                Points</a>
+                            {% endif %}
+                        </div>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userMenu" data-toggle="dropdown">
+                            {{ user.username }}</a>
+                        <div class="dropdown-menu dropdown-menu-right shadow border-0">
+                            <a class="dropdown-item" href="{% url 'dashboard' %}">Dashboard</a>
+                            <a class="dropdown-item" href="{% url 'profile' %}">Profile</a>
+                            <div class="dropdown-divider"></div>
                             <form action="{% url 'logout' %}" method="post" class="d-inline">
                                 {% csrf_token %}
                                 <button type="submit" class="dropdown-item text-danger">Logout</button>
@@ -56,13 +73,9 @@
                         </div>
                     </li>
                     {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-light text-primary font-weight-bold ml-2"
-                            href="{% url 'register' %}">Register</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link btn btn-outline-light ml-2 btn-sm px-3" href="{% url 'login' %}">Login</a></li>
+                    <li class="nav-item"><a class="nav-link btn btn-light text-primary ml-2 btn-sm px-3 font-weight-bold"
+                            href="{% url 'register' %}">Sign Up</a></li>
                     <li class="nav-item">
                         <a class="btn btn-outline-light ml-2" href="{% url 'start_chapter' %}">Start Chapter</a>
                     </li>
@@ -72,78 +85,71 @@
         </div>
     </nav>
 
-    <div class="container flex-grow-1">
-        {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
-            {{ message }}
-        </div>
-        {% endfor %}
-        {% endif %}
+    <main role="main" class="container">
 
-        {% block content %}{% endblock %}
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
-        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js"
-        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js"
-        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
-        crossorigin="anonymous"></script>
-
-    <footer class="bg-dark text-white mt-5 py-4">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <h5 class="text-uppercase font-weight-bold">Palamedes</h5>
-                    <p class="small text-muted">
-                        The Fraternity Management System designed to handle points, dues, and tasks with
-                        ease.
-                    </p>
-                </div>
-
-                <div class="col-md-4 mb-3">
-                    <h5 class="text-uppercase font-weight-bold">Quick Links</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="{% url 'home' %}" class="text-white-50">Home</a></li>
-                        <li><a href="{% url 'about' %}" class="text-white-50">About Palamedes</a></li>
-                        <li><a href="{% url 'start_chapter' %}" class="text-white-50">Start a Chapter</a></li>
-                        {% if user.is_authenticated %}
-                        <li><a href="{% url 'dashboard' %}" class="text-white-50">My Dashboard</a></li>
-                        {% else %}
-                        <li><a href="{% url 'login' %}" class="text-white-50">Login</a></li>
+        <div class="row mb-3 align-items-center">
+            <div class="col-8 col-md-9">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb bg-transparent p-0 m-0">
+                        {% if user.is_authenticated and '/dashboard/' in request.path and request.resolver_match.url_name != 'dashboard' %}
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
                         {% endif %}
-                    </ul>
-                </div>
 
-                <div class="col-md-4 mb-3">
-                    <h5 class="text-uppercase font-weight-bold">Connect</h5>
-                    <p class="small text-muted">
-                        Built with Django & Bootstrap.
-                    </p>
-                    <div class="mb-2">
-                        <a href="#" class="text-white mr-3"><i class="fab fa-github fa-lg"></i></a>
-                        <a href="#" class="text-white mr-3"><i class="fab fa-twitter fa-lg"></i></a>
-                        <a href="#" class="text-white"><i class="fas fa-envelope fa-lg"></i></a>
-                    </div>
-                </div>
+                        {% block breadcrumb %}{% endblock %}
+                    </ol>
+                </nav>
             </div>
 
-            <hr class="bg-secondary">
+            <div class="col-4 col-md-3 text-right">
+                {% if request.resolver_match.url_name != 'home' and request.resolver_match.url_name != 'dashboard' %}
+                <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary shadow-sm">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
+                {% endif %}
+            </div>
+        </div>
 
+        <div class="row">
+            <div class="col-md-12">
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer mt-auto py-4 bg-light border-top">
+        <div class="container">
             <div class="row">
-                <div class="col-md-12 text-center">
-                    <p class="small text-muted mb-0">
-                        &copy; {% now "Y" %} Palamedes. Designed by Dan Nguyen and Rajwat Singh.
-                    </p>
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <h5 class="text-primary font-weight-bold"><i class="bi bi-shield-shaded"></i> Palamedes</h5>
+                    <small class="text-muted">Streamlining Fraternity Management.</small>
+                    <p class="text-muted small mt-2">&copy; {% now "Y" %} Palamedes. Designed by Dan Nguyen and Rajwat
+                        Singh.</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <a href="{% url 'home' %}" class="text-muted mr-3">Home</a>
+                    <a href="{% url 'about' %}" class="text-muted mr-3">About</a>
+                    <a href="{% url 'start_chapter' %}" class="text-muted mr-3">Start a Chapter</a>
                 </div>
             </div>
         </div>
     </footer>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
 </body>
 
 </html>
-
