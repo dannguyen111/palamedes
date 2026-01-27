@@ -1,5 +1,9 @@
 {% extends "homepage/base.html" %}
 
+{% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">Points Hub</li>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4 align-items-center">
     <div class="col-md-6">
@@ -142,13 +146,12 @@
                                         <tr>
                                             <th style="min-width: 150px;">
                                                 <div class="dropdown">
-                                                    <a class="text-dark font-weight-bold dropdown-toggle text-decoration-none" href="#" role="button"
-                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-boundary="viewport">
+                                                    <a class="text-dark font-weight-bold dropdown-toggle text-decoration-none" href="#" role="button" data-toggle="dropdown"
+                                                        aria-haspopup="true" aria-expanded="false" data-boundary="viewport">
                                                         Recipient {% if current_recipient %}<i class="fas fa-filter text-primary"></i>{% endif %}
                                                     </a>
                                                     <div class="dropdown-menu shadow" style="max-height: 300px; overflow-y: auto;">
-                                                        <a class="dropdown-item"
-                                                            href="?recipient=&approver={{ current_approver }}&sort={{ current_sort }}">All</a>
+                                                        <a class="dropdown-item" href="?recipient=&approver={{ current_approver }}&sort={{ current_sort }}">All</a>
                                                         <div class="dropdown-divider"></div>
                                                         {% for m in chapter_members %}<a class="dropdown-item"
                                                             href="?recipient={{ m.id }}&approver={{ current_approver }}&sort={{ current_sort }}">
@@ -158,13 +161,12 @@
                                             </th>
                                             <th style="min-width: 150px;">
                                                 <div class="dropdown">
-                                                    <a class="text-dark font-weight-bold dropdown-toggle text-decoration-none" href="#" role="button"
-                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-boundary="viewport">
+                                                    <a class="text-dark font-weight-bold dropdown-toggle text-decoration-none" href="#" role="button" data-toggle="dropdown"
+                                                        aria-haspopup="true" aria-expanded="false" data-boundary="viewport">
                                                         Approver {% if current_approver %}<i class="fas fa-filter text-primary"></i>{% endif %}
                                                     </a>
                                                     <div class="dropdown-menu shadow" style="max-height: 300px; overflow-y: auto;">
-                                                        <a class="dropdown-item"
-                                                            href="?approver=&recipient={{ current_recipient }}&sort={{ current_sort }}">All</a>
+                                                        <a class="dropdown-item" href="?approver=&recipient={{ current_recipient }}&sort={{ current_sort }}">All</a>
                                                         <div class="dropdown-divider"></div>
                                                         {% for m in approvers_list %}<a class="dropdown-item"
                                                             href="?approver={{ m.id }}&recipient={{ current_recipient }}&sort={{ current_sort }}">
@@ -235,13 +237,12 @@
                                         <tr>
                                             <th style="min-width: 150px;">
                                                 <div class="dropdown">
-                                                    <a class="text-dark font-weight-bold dropdown-toggle text-decoration-none" href="#" role="button"
-                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-boundary="viewport">
+                                                    <a class="text-dark font-weight-bold dropdown-toggle text-decoration-none" href="#" role="button" data-toggle="dropdown"
+                                                        aria-haspopup="true" aria-expanded="false" data-boundary="viewport">
                                                         Recipient {% if current_recipient %}<i class="fas fa-filter text-primary"></i>{% endif %}
                                                     </a>
                                                     <div class="dropdown-menu shadow" style="max-height: 300px; overflow-y: auto;">
-                                                        <a class="dropdown-item"
-                                                            href="?recipient=&approver={{ current_approver }}&sort={{ current_sort }}">All</a>
+                                                        <a class="dropdown-item" href="?recipient=&approver={{ current_approver }}&sort={{ current_sort }}">All</a>
                                                         <div class="dropdown-divider"></div>
                                                         {% for m in chapter_members %}<a class="dropdown-item"
                                                             href="?recipient={{ m.id }}&approver={{ current_approver }}&sort={{ current_sort }}">
@@ -251,13 +252,12 @@
                                             </th>
                                             <th style="min-width: 150px;">
                                                 <div class="dropdown">
-                                                    <a class="text-dark font-weight-bold dropdown-toggle text-decoration-none" href="#" role="button"
-                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-boundary="viewport">
+                                                    <a class="text-dark font-weight-bold dropdown-toggle text-decoration-none" href="#" role="button" data-toggle="dropdown"
+                                                        aria-haspopup="true" aria-expanded="false" data-boundary="viewport">
                                                         Approver {% if current_approver %}<i class="fas fa-filter text-primary"></i>{% endif %}
                                                     </a>
                                                     <div class="dropdown-menu shadow" style="max-height: 300px; overflow-y: auto;">
-                                                        <a class="dropdown-item"
-                                                            href="?approver=&recipient={{ current_recipient }}&sort={{ current_sort }}">All</a>
+                                                        <a class="dropdown-item" href="?approver=&recipient={{ current_recipient }}&sort={{ current_sort }}">All</a>
                                                         <div class="dropdown-divider"></div>
                                                         {% for m in approvers_list %}<a class="dropdown-item"
                                                             href="?approver={{ m.id }}&recipient={{ current_recipient }}&sort={{ current_sort }}">
