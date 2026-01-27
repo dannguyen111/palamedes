@@ -22,8 +22,8 @@
             <a class="navbar-brand font-weight-bold" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}">
                 <i class="bi bi-shield-shaded mr-1"></i> Palamedes
             </a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle"
-                aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false"
+                aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
@@ -37,8 +37,8 @@
                     {% if user.is_authenticated %}
 
                     <li class="nav-item dropdown mr-2">
-                        <a class="nav-link dropdown-toggle btn btn-outline-light border-0 text-white font-weight-bold" href="#" id="quickActions"
-                            role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle btn btn-outline-light border-0 text-white font-weight-bold" href="#" id="quickActions" role="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="bi bi-lightning-fill text-warning"></i> Actions
                         </a>
                         <div class="dropdown-menu dropdown-menu-right shadow border-0" aria-labelledby="quickActions">
@@ -74,8 +74,7 @@
                     </li>
                     {% else %}
                     <li class="nav-item"><a class="nav-link btn btn-outline-light ml-2 btn-sm px-3" href="{% url 'login' %}">Login</a></li>
-                    <li class="nav-item"><a class="nav-link btn btn-light text-primary ml-2 btn-sm px-3 font-weight-bold"
-                            href="{% url 'register' %}">Sign Up</a></li>
+                    <li class="nav-item"><a class="nav-link btn btn-light text-primary ml-2 btn-sm px-3 font-weight-bold" href="{% url 'register' %}">Sign Up</a></li>
                     <li class="nav-item">
                         <a class="btn btn-outline-light ml-2" href="{% url 'start_chapter' %}">Start Chapter</a>
                     </li>
@@ -98,14 +97,6 @@
                         {% block breadcrumb %}{% endblock %}
                     </ol>
                 </nav>
-            </div>
-
-            <div class="col-4 col-md-3 text-right">
-                {% if request.resolver_match.url_name != 'home' and request.resolver_match.url_name != 'dashboard' %}
-                <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary shadow-sm">
-                    <i class="bi bi-arrow-left"></i> Back
-                </a>
-                {% endif %}
             </div>
         </div>
 
@@ -145,10 +136,10 @@
 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
         crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js"
-        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js"
-        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
 
 </body>
 
