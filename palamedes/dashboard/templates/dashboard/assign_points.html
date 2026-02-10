@@ -1,15 +1,12 @@
 {% extends "homepage/base.html" %}
 {% load crispy_forms_tags %}
 
-{% block content %}
-<div class="row mb-3">
-    <div class="col-md-12">
-        <a href="{% url 'points_hub' %}" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-arrow-left"></i> Back to Points Hub
-        </a>
-    </div>
-</div>
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'points_hub' %}">Points Hub</a></li>
+<li class="breadcrumb-item active" aria-current="page">Assign Points</li>
+{% endblock %}
 
+{% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card shadow">

@@ -1,5 +1,9 @@
 {% extends "homepage/base.html" %}
 
+{% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">Directory</li>
+{% endblock %}
+
 {% block content %}
 <div id="js-messages"></div>
 
@@ -17,15 +21,13 @@
         </button>
 
         {% if user.position.can_manage_points %}
-        <button type="submit" form="bulk-actions-form" formaction="{% url 'manage_points_creation' %}"
-            class="btn btn-primary shadow-sm mr-1">
+        <button type="submit" form="bulk-actions-form" formaction="{% url 'manage_points_creation' %}" class="btn btn-primary shadow-sm mr-1">
             <i class="fas fa-star"></i> Points
         </button>
         {% endif %}
 
         {% if user.position.can_manage_finance %}
-        <button type="submit" form="bulk-actions-form" formaction="{% url 'manage_dues_creation' %}"
-            class="btn btn-success shadow-sm">
+        <button type="submit" form="bulk-actions-form" formaction="{% url 'manage_dues_creation' %}" class="btn btn-success shadow-sm">
             <i class="fas fa-file-invoice-dollar"></i> Bill
         </button>
         {% endif %}
@@ -41,8 +43,7 @@
                     <div class="input-group-prepend">
                         <div class="input-group-text"><i class="fas fa-search"></i></div>
                     </div>
-                    <input type="text" name="q" class="form-control" placeholder="Search name, major, or hometown..."
-                        value="{{ search_query }}">
+                    <input type="text" name="q" class="form-control" placeholder="Search name, major, or hometown..." value="{{ search_query }}">
                 </div>
 
                 <select name="status" class="custom-select mb-2 mr-sm-2">
@@ -71,16 +72,14 @@
             <div class="card h-100 shadow-sm border-0 hover-card position-relative">
 
                 <div style="position: absolute; top: 10px; left: 10px; z-index: 10;">
-                    <input type="checkbox" name="selected_members" value="{{ member.id }}"
-                        data-email="{{ member.email }}" class="big-checkbox member-checkbox"
+                    <input type="checkbox" name="selected_members" value="{{ member.id }}" data-email="{{ member.email }}" class="big-checkbox member-checkbox"
                         style="transform: scale(1.5);">
                 </div>
 
                 <a href="{% url 'brother_profile' member.pk %}" class="stretched-link"></a>
 
                 <div class="text-center pt-4">
-                    <img src="{{ member.image.url }}" class="rounded-circle img-thumbnail"
-                        style="width: 120px; height: 120px; object-fit: cover;">
+                    <img src="{{ member.image.url }}" class="rounded-circle img-thumbnail" style="width: 120px; height: 120px; object-fit: cover;">
                 </div>
 
                 <div class="card-body text-center">
@@ -102,8 +101,7 @@
                 </div>
 
                 <div class="card-footer bg-white border-top-0 pb-4 px-4">
-                    <a href="mailto:{{ member.email }}" class="btn btn-outline-primary btn-block"
-                        style="position: relative; z-index: 2;">
+                    <a href="mailto:{{ member.email }}" class="btn btn-outline-primary btn-block" style="position: relative; z-index: 2;">
                         <i class="fas fa-envelope"></i> Email
                     </a>
                 </div>

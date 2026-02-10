@@ -1,8 +1,14 @@
 {% extends "homepage/base.html" %}
 
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dues_dashboard' %}">Financials Hub</a></li>
+<li class="breadcrumb-item"><a href="{% url 'unpaid_directory' %}">Pending Payments</a></li>
+<li class="breadcrumb-item active" aria-current="page">Due Details</li>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
-    
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div class="d-flex align-items-center">
             <img src="{{ brother.profile_image.url }}" class="rounded-circle mr-3 border" style="width: 60px; height: 60px; object-fit: cover;">
@@ -11,9 +17,6 @@
                 <span class="text-muted">{{ brother.email }}</span>
             </div>
         </div>
-        <a href="{% url 'unpaid_directory' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left mr-1"></i> Back to Directory
-        </a>
     </div>
 
     <div class="card shadow">
@@ -38,18 +41,18 @@
                     <td class="align-middle">${{ due.amount }}</td>
                     <td class="align-middle">
                         {% if due.is_paid %}
-                            <span class="badge badge-success px-2 py-1">PAID</span>
+                        <span class="badge badge-success px-2 py-1">PAID</span>
                         {% else %}
-                            <span class="badge badge-danger px-2 py-1">UNPAID</span>
+                        <span class="badge badge-danger px-2 py-1">UNPAID</span>
                         {% endif %}
                     </td>
                     <td class="text-right align-middle">
                         {% if not due.is_paid %}
-                            <a href="{% url 'make_mark_paid' due.pk %}" class="btn btn-sm btn-outline-success">
-                                Manual Payment
-                            </a>
+                        <a href="{% url 'make_mark_paid' due.pk %}" class="btn btn-sm btn-outline-success">
+                            Manual Payment
+                        </a>
                         {% else %}
-                            <span class="text-muted small"><i class="fas fa-check"></i> Completed</span>
+                        <span class="text-muted small"><i class="fas fa-check"></i> Completed</span>
                         {% endif %}
                     </td>
                 </tr>
