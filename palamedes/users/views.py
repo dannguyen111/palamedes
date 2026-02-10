@@ -14,14 +14,14 @@ def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            # 1. Create user but don't save to DB yet
+            # Create user but don't save to DB yet
             user = form.save(commit=False)
             
-            # 2. Deactivate until email is confirmed
+            # Deactivate until email is confirmed
             user.is_active = False 
             user.save()
             
-            # 3. Save Many-to-Many data (required when commit=False)
+            # Save Many-to-Many data (required when commit=False)
             form.save_m2m()
 
             # --- EMAIL VERIFICATION LOGIC ---
