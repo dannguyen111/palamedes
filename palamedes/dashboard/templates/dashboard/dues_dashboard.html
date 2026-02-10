@@ -2,6 +2,11 @@
 <script src="https://js.braintreegateway.com/web/3.97.2/js/client.min.js"></script>
 <script src="https://js.braintreegateway.com/web/3.97.2/js/venmo.min.js"></script>
 <script src="https://js.braintreegateway.com/web/3.97.2/js/data-collector.min.js"></script>
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">Financials Hub</li>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
@@ -111,40 +116,40 @@
     </div>
 </div>
 <script>
-const payButton = document.getElementById('pay-button');
-const checkboxes = document.querySelectorAll('.due-checkbox');
-const selectAllBtn = document.getElementById('select-all-btn');
+    const payButton = document.getElementById('pay-button');
+    const checkboxes = document.querySelectorAll('.due-checkbox');
+    const selectAllBtn = document.getElementById('select-all-btn');
 
-// Your existing visibility logic
-function toggleButton() {
-    const isAnyChecked = Array.from(checkboxes).some(box => box.checked);
-    payButton.style.display = isAnyChecked ? 'block' : 'none'; // or 'inline-block'
-}
+    // Your existing visibility logic
+    function toggleButton() {
+        const isAnyChecked = Array.from(checkboxes).some(box => box.checked);
+        payButton.style.display = isAnyChecked ? 'block' : 'none'; // or 'inline-block'
+    }
 
-// --- NEW: Select All Logic ---
-selectAllBtn.addEventListener('click', function() {
-    // Check if all are currently checked
-    const allChecked = Array.from(checkboxes).every(box => box.checked);
+    // --- NEW: Select All Logic ---
+    selectAllBtn.addEventListener('click', function () {
+        // Check if all are currently checked
+        const allChecked = Array.from(checkboxes).every(box => box.checked);
 
-    // If all are checked, uncheck them. Otherwise, check them all.
-    const newState = !allChecked;
+        // If all are checked, uncheck them. Otherwise, check them all.
+        const newState = !allChecked;
 
-    checkboxes.forEach(box => {
-        if (!box.disabled) { // Don't mess with disabled (already paid) boxes
-            box.checked = newState;
-        }
+        checkboxes.forEach(box => {
+            if (!box.disabled) { // Don't mess with disabled (already paid) boxes
+                box.checked = newState;
+            }
+        });
+
+        // Update the button text
+        selectAllBtn.textContent = newState ? "Deselect All" : "Select All";
+
+        // IMPORTANT: Manually trigger the visibility check
+        toggleButton();
     });
 
-    // Update the button text
-    selectAllBtn.textContent = newState ? "Deselect All" : "Select All";
-
-    // IMPORTANT: Manually trigger the visibility check
-    toggleButton();
-});
-
-// Attach listeners to individual boxes (Your existing code)
-checkboxes.forEach(box => {
-    box.addEventListener('change', toggleButton);
-});
+    // Attach listeners to individual boxes (Your existing code)
+    checkboxes.forEach(box => {
+        box.addEventListener('change', toggleButton);
+    });
 </script>
 {% endblock %}

@@ -1,5 +1,11 @@
 {% extends "homepage/base.html" %}
 
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dues_dashboard' %}">Financials Hub</a></li>
+<li class="breadcrumb-item"><a href="{% url 'unpaid_directory' %}">Pending Payments</a></li>
+<li class="breadcrumb-item active" aria-current="page">Due Details</li>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
 

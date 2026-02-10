@@ -1,4 +1,10 @@
 {% extends "homepage/base.html" %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dues_dashboard' %}">Financials Hub</a></li>
+<li class="breadcrumb-item active" aria-current="page">Pending Payments</li>
+{% endblock %}
+
 {% block content %}
 <div id="js-messages"></div>
 <div class="row mb-4 align-items-center">
@@ -32,8 +38,7 @@
                     <div class="input-group-prepend">
                         <div class="input-group-text"><i class="fas fa-search"></i></div>
                     </div>
-                    <input type="text" name="filter" class="form-control"
-                        placeholder="Search name, major, or hometown..." value="{{ search_query }}">
+                    <input type="text" name="filter" class="form-control" placeholder="Search name, major, or hometown..." value="{{ search_query }}">
                 </div>
                 <select name="status" class="custom-select mb-2 mr-sm-2">
                     <option value="">Status</option>
@@ -71,7 +76,8 @@
                     {% for member in members %}
                     <tr>
                         <td class="align-middle text-center">
-                            <input type="checkbox" name="selected_members" value="{{ member.pk }}" data-email="{{ member.email }}" class="member-checkbox" style="transform: scale(1.2); cursor: pointer;">
+                            <input type="checkbox" name="selected_members" value="{{ member.pk }}" data-email="{{ member.email }}" class="member-checkbox"
+                                style="transform: scale(1.2); cursor: pointer;">
                         </td>
                         <td class="align-middle">
                             <div class="d-flex align-items-center">
@@ -79,7 +85,8 @@
                                     {% if member.image %}
                                     <img src="{{ member.image.url }}" class="rounded-circle border" style="width: 45px; height: 45px; object-fit: cover; margin-right: 15px;">
                                     {% else %}
-                                    <img src="https://via.placeholder.com/45?text={{ member.first_name|slice:':1' }}" class="rounded-circle border" style="width: 45px; height: 45px; object-fit: cover; margin-right: 15px;">
+                                    <img src="https://via.placeholder.com/45?text={{ member.first_name|slice:':1' }}" class="rounded-circle border"
+                                        style="width: 45px; height: 45px; object-fit: cover; margin-right: 15px;">
                                     {% endif %}
                                 </a>
                                 <div>
@@ -130,12 +137,12 @@
     </div>
 </form>
 <script>
-function showMessage(message, type) {
-    const container = document.getElementById('js-messages');
-    const alertId = 'alert-' + Date.now(); // Unique ID for this alert
+    function showMessage(message, type) {
+        const container = document.getElementById('js-messages');
+        const alertId = 'alert-' + Date.now(); // Unique ID for this alert
 
-    // Create the alert HTML
-    const html = `
+        // Create the alert HTML
+        const html = `
             <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
                 <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> 
                 ${message}
@@ -145,60 +152,60 @@ function showMessage(message, type) {
             </div>
         `;
 
-    container.innerHTML = html;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+        container.innerHTML = html;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Set Timer to remove it after 5 seconds
-    setTimeout(() => {
-        const element = document.getElementById(alertId);
-        if (element) {
-            $(element).alert('close');
-        }
-    }, 5000);
-}
-
-function sendMassEmail() {
-    // Find all checked boxes
-    const checkboxes = document.querySelectorAll('.member-checkbox:checked');
-
-    if (checkboxes.length === 0) {
-        alert("Please select at least one member to email.");
-        return;
-    }
-
-    // Collect emails
-    let emails = [];
-    checkboxes.forEach((box) => {
-        const email = box.getAttribute('data-email');
-        if (email) emails.push(email);
-    });
-
-    if (emails.length === 0) {
-        alert("None of the selected members have email addresses.");
-        return;
-    }
-
-    const emailString = emails.join(', ');
-
-    // Try to Copy to Clipboard
-    navigator.clipboard.writeText(emailString).then(() => {
-        showMessage("Email addresses copied to clipboard.", "success");
-
-        // Try to open mail client
+        // Set Timer to remove it after 5 seconds
         setTimeout(() => {
-            window.location.href = `mailto:?bcc=${emails.join(',')}`;
-        }, 1000);
+            const element = document.getElementById(alertId);
+            if (element) {
+                $(element).alert('close');
+            }
+        }, 5000);
+    }
 
-    }).catch(err => {
-        console.error('Failed to copy: ', err);
-        showMessage("Could not copy emails automatically. Please check permissions.", "danger");
-    });
-}
+    function sendMassEmail() {
+        // Find all checked boxes
+        const checkboxes = document.querySelectorAll('.member-checkbox:checked');
+
+        if (checkboxes.length === 0) {
+            alert("Please select at least one member to email.");
+            return;
+        }
+
+        // Collect emails
+        let emails = [];
+        checkboxes.forEach((box) => {
+            const email = box.getAttribute('data-email');
+            if (email) emails.push(email);
+        });
+
+        if (emails.length === 0) {
+            alert("None of the selected members have email addresses.");
+            return;
+        }
+
+        const emailString = emails.join(', ');
+
+        // Try to Copy to Clipboard
+        navigator.clipboard.writeText(emailString).then(() => {
+            showMessage("Email addresses copied to clipboard.", "success");
+
+            // Try to open mail client
+            setTimeout(() => {
+                window.location.href = `mailto:?bcc=${emails.join(',')}`;
+            }, 1000);
+
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            showMessage("Could not copy emails automatically. Please check permissions.", "danger");
+        });
+    }
 </script>
 <style>
-/* Makes the whole row clickable lightly */
-.table-hover tbody tr:hover {
-    background-color: #f8f9fa;
-}
+    /* Makes the whole row clickable lightly */
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
 </style>
 {% endblock %}
