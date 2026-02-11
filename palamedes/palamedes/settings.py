@@ -155,3 +155,22 @@ MEDIA_URL = '/media/'
 STRIPE_PUBLIC_KEY = 'pk_test_51Sn9SdC9aeKFAcVNlNXjCbCAjqMAhW4PPt96tc3b6fRwl7X0y2NcTnjql5zldB7FjvTHFp98NBrNmMxH1SFxvNKF00XaZngjLJ'
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 
+# AWS S3 SETTINGS
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+
+if AWS_ACCESS_KEY_ID:
+    # If keys are present (Production), use S3
+    AWS_S3_REGION_NAME = 'us-east-2'
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_S3_VERIFY = True
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    
+    # This prevents the S3 URL from signing (which expires after 1 hour)
+    AWS_QUERYSTRING_AUTH = False 
+else:
+    # If no keys (Local Development), use local folder
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
