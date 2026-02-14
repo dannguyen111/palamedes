@@ -25,6 +25,11 @@ def approve_requests(modeladmin, request, queryset):
             }
         )
 
+        if not created and (not chapter.nm_invite_code or not chapter.active_invite_code):
+            chapter.nm_invite_code = nm_code
+            chapter.active_invite_code = active_code
+            chapter.save()
+
         # Create default positions for the chapter
         Position.objects.create(
             chapter=chapter, title="President",
