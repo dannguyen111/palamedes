@@ -11,14 +11,18 @@ def approve_requests(modeladmin, request, queryset):
             continue # Skip if already approved
 
         # 1. Generate a random invite code (8 characters)
-        code = secrets.token_hex(4).upper()
+        nm_code = secrets.token_hex(4).upper()
+        active_code = secrets.token_hex(4).upper()
 
         # 2. Create the actual Chapter in the database
         # We use get_or_create to prevent duplicates if you click twice
         chapter, created = Chapter.objects.get_or_create(
             name=req.fraternity_name,
             university=req.university,
-            defaults={'invite_code': code}
+            defaults={
+                'nm_invite_code': nm_code,
+                'active_invite_code': active_code
+            }
         )
 
         # Create default positions for the chapter
@@ -60,10 +64,12 @@ def approve_requests(modeladmin, request, queryset):
 
         Your chapter request for {req.fraternity_name} at {req.university} has been approved.
 
-        Your Invite Code is: {chapter.invite_code}
+        Your Invite Codes are:
+        - Active Member Code: {chapter.active_invite_code}
+        - New Member Code: {chapter.nm_invite_code}
 
-        Please register your President account here:
-        http://127.0.0.1:8000/register/
+        Please register your President account here using the Active code:
+        https://palamedes-5af1.onrender.com/register/
         """
         
         send_mail(

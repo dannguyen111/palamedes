@@ -7,7 +7,8 @@ class Chapter(models.Model):
     name = models.CharField(max_length=100, help_text="e.g. Theta Chi")
     university = models.CharField(max_length=100, help_text="e.g. UC Riverside")
     # This code allows new members to join the right house
-    invite_code = models.CharField(max_length=10, unique=True) 
+    nm_invite_code = models.CharField(max_length=10, unique=True, null=True, blank=True) 
+    active_invite_code = models.CharField(max_length=10, unique=True, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} - {self.university}"

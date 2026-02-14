@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.db.models import Q
 from .models import CustomUser, Chapter, Position
 from homepage.models import ChapterRequest # To check the approved email
 
@@ -15,19 +16,24 @@ class CustomUserCreationForm(UserCreationForm):
 
     def clean_invite_code(self):
         code = self.cleaned_data.get('invite_code')
-        try:
-            chapter = Chapter.objects.get(invite_code=code)
-        except Chapter.DoesNotExist:
+        # Check if the code matches EITHER an active or nm code
+        if not Chapter.objects.filter(Q(nm_invite_code=code) | Q(active_invite_code=code)).exists():
             raise forms.ValidationError("Invalid Invite Code.")
         return code
 
     def save(self, commit=True):
         user = super().save(commit=False)
         code = self.cleaned_data.get('invite_code')
-        chapter = Chapter.objects.get(invite_code=code)
+        chapter = Chapter.objects.get(Q(nm_invite_code=code) | Q(active_invite_code=code))
         
         # LINK USER TO CHAPTER
         user.chapter = chapter
+
+        # Determine default status based on which code they used
+        if code == chapter.active_invite_code:
+            assigned_status = 'ACT'
+        else:
+            assigned_status = 'NM'
 
         # Check if this user's email matches the APPROVED request email
         try:

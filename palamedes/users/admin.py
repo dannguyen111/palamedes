@@ -10,7 +10,7 @@ class PositionAdmin(admin.ModelAdmin):
 
 @admin.register(Chapter)
 class ChapterAdmin(admin.ModelAdmin):
-    list_display = ('name', 'university', 'invite_code')
+    list_display = ('name', 'university', 'active_invite_code', 'nm_invite_code')
     search_fields = ('name', 'university')
 
 @admin.register(CustomUser)
