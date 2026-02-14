@@ -47,7 +47,7 @@ class CustomUserCreationForm(UserCreationForm):
             user.status = 'ACT'
         except ChapterRequest.DoesNotExist:
             user.position = Position.objects.get(chapter=chapter, title="No Position")
-            user.status = 'NM'
+            user.status = assigned_status
 
         if commit:
             user.save()
