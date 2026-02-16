@@ -33,28 +33,28 @@ def approve_requests(modeladmin, request, queryset):
         # Create default positions for the chapter
         Position.objects.create(
             chapter=chapter, title="President",
-            can_manage_roster=True, can_manage_finance=True, 
+            can_manage_roster=True, can_manage_finance=True, can_manage_nm_points=True,
             can_manage_points=True, can_manage_tasks=True, can_create_positions=True
         )
         
         # Vice President: Can do everything EXCEPT create positions/change President
         Position.objects.create(
             chapter=chapter, title="Vice President",
-            can_manage_roster=True, can_manage_finance=False, 
+            can_manage_roster=True, can_manage_finance=False, can_manage_nm_points=True,
             can_manage_points=True, can_manage_tasks=True, can_create_positions=False
         )
 
         # Treasurer: Money only
         Position.objects.create(
             chapter=chapter, title="Treasurer",
-            can_manage_roster=False, can_manage_finance=True, 
+            can_manage_roster=False, can_manage_finance=True, can_manage_nm_points=False,
             can_manage_points=False, can_manage_tasks=False, can_create_positions=False
         )
 
         # No position
         Position.objects.create(
             chapter=chapter, title="No Position",
-            can_manage_roster=False, can_manage_finance=False, 
+            can_manage_roster=False, can_manage_finance=False, can_manage_nm_points=False,
             can_manage_points=False, can_manage_tasks=False, can_create_positions=False
         )
 
