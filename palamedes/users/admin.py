@@ -4,7 +4,7 @@ from .models import CustomUser, Chapter, Position
 
 @admin.register(Position)
 class PositionAdmin(admin.ModelAdmin):
-    list_display = ('title', 'chapter', 'can_manage_finance', 'can_manage_points', 'can_manage_roster', 'can_manage_tasks', 'can_create_positions')
+    list_display = ('title', 'chapter', 'can_manage_finance', 'can_manage_points', 'can_manage_roster', 'can_manage_tasks', 'can_create_positions', 'can_manage_nm_points')
     list_filter = ('chapter',)
     search_fields = ('title', 'chapter__name')
 

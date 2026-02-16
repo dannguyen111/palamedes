@@ -210,7 +210,41 @@
                                                 {% endif %}
                                             </td>
                                             <td>{{ point.description|truncatechars:35 }}</td>
-                                            <td class="font-weight-bold">{{ point.amount }}</td>
+                                            <td class="font-weight-bold">
+                                                {{ point.amount }}
+
+                                                {% if user.position.can_manage_points or user.position.can_manage_nm_points %}
+                                                <a href="#" class="text-primary ml-2" data-toggle="modal" data-target="#editNMModal{{ point.id }}" title="Edit Points">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+
+                                                <div class="modal fade" id="editNMModal{{ point.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                                    <div class="modal-dialog modal-sm" role="document">
+                                                        <div class="modal-content">
+                                                            <form action="{% url 'edit_log_point' point.id %}" method="POST">
+                                                                {% csrf_token %}
+                                                                <div class="modal-header bg-light">
+                                                                    <h6 class="modal-title font-weight-bold">Edit NM Points</h6>
+                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                        <span aria-hidden="true">&times;</span>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="modal-body text-left">
+                                                                    <div class="form-group mb-0">
+                                                                        <label class="small text-muted mb-1">Adjust Amount for {{ point.user.first_name }}</label>
+                                                                        <input type="number" name="amount" class="form-control" value="{{ point.amount }}" required>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer p-2">
+                                                                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Cancel</button>
+                                                                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </td>
                                             <td><span
                                                     class="{% if point.status == 'APPROVED' %}text-success{% elif point.status == 'REJECTED' %}text-danger{% else %}text-warning{% endif %}">
                                                     {{ point.get_status_display }}
@@ -301,7 +335,41 @@
                                                 {% endif %}
                                             </td>
                                             <td>{{ point.description|truncatechars:35 }}</td>
-                                            <td class="font-weight-bold">{{ point.amount }}</td>
+                                            <td class="font-weight-bold">
+                                                {{ point.amount }}
+
+                                                {% if user.position.can_manage_points %}
+                                                <a href="#" class="text-primary ml-2" data-toggle="modal" data-target="#editActModal{{ point.id }}" title="Edit Points">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+
+                                                <div class="modal fade" id="editActModal{{ point.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                                    <div class="modal-dialog modal-sm" role="document">
+                                                        <div class="modal-content">
+                                                            <form action="{% url 'edit_log_point' point.id %}" method="POST">
+                                                                {% csrf_token %}
+                                                                <div class="modal-header bg-light">
+                                                                    <h6 class="modal-title font-weight-bold">Edit Active Points</h6>
+                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                        <span aria-hidden="true">&times;</span>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="modal-body text-left">
+                                                                    <div class="form-group mb-0">
+                                                                        <label class="small text-muted mb-1">Adjust Amount for {{ point.user.first_name }}</label>
+                                                                        <input type="number" name="amount" class="form-control" value="{{ point.amount }}" required>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer p-2">
+                                                                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Cancel</button>
+                                                                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </td>
                                             <td><span
                                                     class="{% if point.status == 'APPROVED' %}\text-success{% elif point.status == 'REJECTED' %}text-danger{% else %}text-warning{% endif %}">
                                                     {{ point.get_status_display }}

@@ -23,6 +23,7 @@ class Position(models.Model):
     can_manage_points = models.BooleanField(default=False, help_text="Can approve/deny point requests.")
     can_manage_tasks = models.BooleanField(default=False, help_text="Can assign tasks to others.")
     can_create_positions = models.BooleanField(default=False, help_text="Can create new officer positions (President only).")
+    can_manage_nm_points = models.BooleanField(default=False, help_text="Can manage and edit New Member points.")
     
     def __str__(self):
         return f"{self.title} ({self.chapter.name})"

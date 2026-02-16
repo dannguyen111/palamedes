@@ -22,4 +22,5 @@ urlpatterns = [
     path('directory/', views.directory, name='brother_directory'),
     path('directory/member/<int:pk>/', views.brother_profile, name='brother_profile'),
     path('points/manage/', views.manage_points_creation, name='manage_points_creation'),
+    path('points/edit_log/<int:pk>/', views.edit_log_point, name='edit_log_point'),
 ]
