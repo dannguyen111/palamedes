@@ -8,7 +8,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.core.mail import EmailMessage
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, ProfileUpdateForm
 
 def register(request):
     if request.method == 'POST':
@@ -65,4 +65,20 @@ def activate(request, uidb64, token):
 
 @login_required
 def profile(request):
-    return render(request, 'users/profile.html')
+    if request.method == 'POST':
+        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
+        
+        if p_form.is_valid():
+            p_form.save()
+            messages.success(request, 'Your profile has been updated successfully!')
+            return redirect('profile') # Redirect back to profile page to avoid POST-GET redirect loop
+            
+    else:
+        # If it's a GET request (just visiting the page), show the form pre-filled with the user's current info
+        p_form = ProfileUpdateForm(instance=request.user)
+
+    context = {
+        'p_form': p_form
+    }
+
+    return render(request, 'users/profile.html', context)
