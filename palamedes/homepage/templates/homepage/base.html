@@ -21,67 +21,42 @@
 <body class="d-flex flex-column min-vh-100">
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 sticky-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand font-weight-bold" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}">
-                <i class="bi bi-shield-shaded mr-1"></i> Palamedes
+            <a class="navbar-brand" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}">
+                <img src="{% static 'homepage/logo-without-text.PNG' %}?v=2" width="30" height="30" class="d-inline-block align-top" alt=""> Palamedes
             </a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false"
+
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false"
                 aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
-            <div class="collapse navbar-collapse" id="navbarToggle">
-                <ul class="navbar-nav mr-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
-                </ul>
-
-                <ul class="navbar-nav ml-auto align-items-center">
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <div class="navbar-nav mr-auto">
                     {% if user.is_authenticated %}
-
-                    <li class="nav-item dropdown mr-2">
-                        <a class="nav-link dropdown-toggle btn btn-outline-light border-0 text-white font-weight-bold" href="#" id="quickActions" role="button"
-                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="bi bi-lightning-fill text-warning"></i> Actions
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right shadow border-0" aria-labelledby="quickActions">
-                            <h6 class="dropdown-header text-uppercase text-muted small font-weight-bold">Create New</h6>
-                            <a class="dropdown-item" href="{% url 'submit_points' %}"><i class="bi bi-star text-warning mr-2"></i> Point Request</a>
-
-                            {% if user.position.can_manage_finance %}
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="{% url 'manage_dues_creation' %}"><i class="bi bi-cash-coin text-success mr-2"></i> Create
-                                Charge</a>
-                            {% endif %}
-
-                            {% if user.position.can_manage_points %}
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="{% url 'assign_points' %}"><i class="bi bi-check2-circle text-primary mr-2"></i> Assign
-                                Points</a>
-                            {% endif %}
-                        </div>
-                    </li>
-
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userMenu" data-toggle="dropdown">
-                            {{ user.username }}</a>
-                        <div class="dropdown-menu dropdown-menu-right shadow border-0">
-                            <a class="dropdown-item" href="{% url 'dashboard' %}">Dashboard</a>
-                            <a class="dropdown-item" href="{% url 'profile' %}">Profile</a>
-                            <div class="dropdown-divider"></div>
-                            <form action="{% url 'logout' %}" method="post" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="dropdown-item text-danger">Logout</button>
-                            </form>
-                        </div>
-                    </li>
+                    <a class="nav-item nav-link" href="{% url 'dashboard' %}">Dashboard</a>
                     {% else %}
-                    <li class="nav-item"><a class="nav-link btn btn-outline-light ml-2 btn-sm px-3" href="{% url 'login' %}">Login</a></li>
-                    <li class="nav-item"><a class="nav-link btn btn-light text-primary ml-2 btn-sm px-3 font-weight-bold" href="{% url 'register' %}">Sign Up</a></li>
-                    <li class="nav-item">
-                        <a class="btn btn-outline-light ml-2" href="{% url 'start_chapter' %}">Start Chapter</a>
-                    </li>
+                    <a class="nav-item nav-link" href="{% url 'home' %}">Home</a>
                     {% endif %}
-                </ul>
+
+                    <a class="nav-item nav-link" href="{% url 'about' %}">About</a>
+                </div>
+
+                <div class="navbar-nav align-items-center">
+                    {% if user.is_authenticated %}
+                    <a class="nav-item nav-link" href="{% url 'profile' %}">
+                        Profile
+                    </a>
+                    <form action="{% url 'logout' %}" method="post" class="m-0 p-0">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-item nav-link bg-transparent border-0">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </form>
+                    {% else %}
+                    <a class="nav-item nav-link" href="{% url 'login' %}">Login</a>
+                    <a class="nav-item nav-link" href="{% url 'register' %}">Register</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>

@@ -3,7 +3,12 @@ from django.contrib import messages
 from .forms import ChapterRequestForm
 
 def home(request):
-    return render(request, 'homepage/home.html', {'title': 'Home'})
+    # Check if the user is already logged in
+    if request.user.is_authenticated:
+        return redirect('dashboard') # Send them straight to the dashboard
+        
+    # Otherwise, show them the normal landing page
+    return render(request, 'homepage/home.html')
 
 def about(request):
     return render(request, 'homepage/about.html', {'title': 'About'})
