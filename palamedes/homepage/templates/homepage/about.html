@@ -1,4 +1,85 @@
-{%extends "homepage/base.html" %}
+{% extends "homepage/base.html" %}
 {% block content %}
-<h1>Palamedes About Page</h1>
+<div class="container my-5">
+
+    <div class="row text-center mb-5">
+        <div class="col">
+            <h1 class="display-4 font-weight-bold text-primary">About Palamedes</h1>
+            <p class="lead text-muted">Built by Greek Life, for Greek Life.</p>
+        </div>
+    </div>
+
+    <div class="row align-items-center mb-5">
+        <div class="col-md-7 mb-4 mb-md-0">
+            <h2 class="mb-3">Our Story</h2>
+            <p>
+                Palamedes started as a passion project by <strong>Dan Nguyen</strong> (former President) and <strong>Rajwat Singh</strong> (former Treasurer) of the Sigma Chi
+                chapter at Gettysburg College.
+            </p>
+            <p>
+                Realizing that our Computer Science skills could be used somewhere helpful for our fraternity, and noticing the distinct lack of a shared management system for our
+                chapter operations, we decided to take matters into our own hands. Dan built the initial structure of the website, and Rajwat joined the team shortly after to help
+                bring the full vision to life.
+            </p>
+            <p>
+                Our ultimate goal is to share this service with other Greek organizations so they can overcome the exact same administrative hurdles we faced.
+            </p>
+        </div>
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0">
+                <img src="/media/IMG_5772.jpg" class="card-img rounded shadow-sm" alt="Dan Nguyen and Rajwat Singh, founders of Palamedes"
+                    style="object-fit: cover; width: 100%; height: auto;">
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-primary">
+                <div class="card-body p-4 p-md-5">
+                    <h2 class="card-title text-primary mb-4">What is Palamedes?</h2>
+                    <p class="card-text">
+                        Palamedes is a comprehensive chapter management platform designed to replace scattered spreadsheets, endless group chats, and disjointed payment apps with a
+                        single, unified hub.
+                    </p>
+                    <p class="card-text mb-4">
+                        By centralizing your organization's data, Palamedes empowers executive boards to lead effectively while keeping active members engaged and informed. Core
+                        features include:
+                    </p>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h5><i class="bi bi-wallet2 text-success mr-2"></i> Financial Management</h5>
+                            <p class="text-muted small">Easily track member dues, send invoices, and manage chapter ledgers from a centralized dashboard.</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h5><i class="bi bi-star text-warning mr-2"></i> Points & Participation</h5>
+                            <p class="text-muted small">Submit, approve, and seamlessly track house points, event attendance, or community service hours.</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h5><i class="bi bi-person-lines-fill text-info mr-2"></i> Member Directory</h5>
+                            <p class="text-muted small">Maintain an up-to-date, secure roster of all active members and their contact information.</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h5><i class="bi bi-shield-check text-primary mr-2"></i> Executive Tools</h5>
+                            <p class="text-muted small">Equip chapter officers with role-specific access to oversee operations without administrative bottlenecks.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row text-center mb-5">
+        <div class="col">
+            <h2 class="mb-3">Get Involved</h2>
+            <p class="lead text-muted mb-4">
+                If you want to know more, or would like to participate in the website and bring Palamedes to your chapter, we would love to hear from you.
+            </p>
+            <a href="mailto:dan.palamedes@gmail.com" class="btn btn-primary btn-lg shadow">
+                <i class="bi bi-envelope-fill mr-2"></i> dan.palamedes@gmail.com
+            </a>
+        </div>
+    </div>
+
+</div>
 {% endblock content %}
