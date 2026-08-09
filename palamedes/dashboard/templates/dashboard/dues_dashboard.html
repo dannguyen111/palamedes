@@ -1,155 +1,160 @@
 {% extends "homepage/base.html" %}
-<script src="https://js.braintreegateway.com/web/3.97.2/js/client.min.js"></script>
-<script src="https://js.braintreegateway.com/web/3.97.2/js/venmo.min.js"></script>
-<script src="https://js.braintreegateway.com/web/3.97.2/js/data-collector.min.js"></script>
 
-{% block breadcrumb %}
-<li class="breadcrumb-item active" aria-current="page">Financials Hub</li>
+{% block page_header %}
+<header class="opener">
+    <h1 class="opener__greeting">Dues</h1>
+
+    <p class="opener__standing">
+        {% if my_dues %}
+        You owe <a class="mark mark--owed" href="#unpaid">${{ total_due|floatformat:2 }}</a>
+        across <span class="mark mark--pending">{{ my_dues|length }}</span>
+        open charge{{ my_dues|length|pluralize }}.
+        {% else %}
+        You're paid in full, with <span class="mark mark--counted">{{ my_history|length }}</span>
+        charge{{ my_history|length|pluralize }} settled.
+        {% endif %}
+    </p>
+</header>
+
+<div class="actionbar">
+    <span class="actionbar__label">Quick actions</span>
+    {% if my_dues %}
+    <a class="btn btn--primary btn--sm" href="#unpaid">
+        <svg class="icon" aria-hidden="true"><use href="#i-card"></use></svg>
+        Pay a charge
+    </a>
+    {% endif %}
+    {% if is_treasurer %}
+    <a class="btn btn--outline btn--sm" href="{% url 'manage_dues_creation' %}">Assign dues</a>
+    <a class="btn btn--outline btn--sm" href="{% url 'unpaid_directory' %}">Who still owes</a>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
-        <h2 class="text-secondary">
-            <a href="{% url 'dashboard' %}" class="text-secondary"><i class="fas fa-arrow-left"></i></a>
-            My Financials
-        </h2>
-    </div>
-    {% if is_treasurer %}
-    <div class="col-md-4 text-right">
-        <a href="{% url 'manage_dues_creation' %}" class="btn btn-info">
-            <i class="fas fa-cog"></i> Manage Dues & Aid
-        </a>
-        <a href="{% url 'unpaid_directory' %}" class="btn btn-info">
-            <i class="fas fa-cog"></i> Pending Payments
-        </a>
-    </div>
-    {% endif %}
-</div>
-<div class="row mb-5">
-    <div class="col-md-12">
-        <div class="card shadow border-left-danger">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <h5 class="text-muted text-uppercase mb-1">Current Balance Due</h5>
-                        {% if total_due > 0 %}
-                        <h1 class="display-4 text-danger font-weight-bold">
-                            ${{ total_due|floatformat:2 }}
-                        </h1>
-                        <p class="text-danger">
-                            <i class="fas fa-exclamation-circle"></i> Action Required
-                        </p>
-                        {% else %}
-                        <h1 class="display-4 text-success font-weight-bold">
-                            $0.00
-                        </h1>
-                        <p class="text-success">
-                            <i class="fas fa-check-circle"></i> You are all paid up!
-                        </p>
-                        {% endif %}
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-file-invoice-dollar fa-4x text-gray-300"></i>
-                    </div>
-                </div>
+
+<section class="bento">
+
+    <div class="widget widget--feature span-5">
+        <div class="widget__head">
+            <span class="widget__label">
+                <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+                Balance due
+            </span>
+        </div>
+
+        <p class="widget__value">${{ total_due|floatformat:2 }}</p>
+
+        {% if my_dues %}
+        {# Solid is settled, hatched is outstanding — the same rule everywhere. #}
+        {% with paid=my_history|length unpaid=my_dues|length %}
+        <div>
+            <div class="meter">
+                <div class="meter__fill" style="width:{% widthratio paid paid|add:unpaid 100 %}%"></div>
+            </div>
+            <div class="meter__legend">
+                <span class="meter__key"><span class="meter__swatch"></span>{{ paid }} paid</span>
+                <span class="meter__key"><span class="meter__swatch meter__swatch--hatch"></span>{{ unpaid }} outstanding</span>
             </div>
         </div>
+        {% endwith %}
+        {% else %}
+        <p class="widget__foot"><span class="chip">Clear</span> Paid in full</p>
+        {% endif %}
     </div>
-</div>
-<div class="row">
-    <div class="col-md-6">
-        <div class="card shadow mb-4">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0"><i class="fas fa-exclamation-circle"></i> Unpaid Charges</h5>
-            </div>
-            <form method="POST" action="{% url 'create_bulk_checkout_session' %}">
-                {% csrf_token %}
-                <ul class="list-group list-group-flush">
-                    {% for due in my_dues %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-0">{{ due.title }}</h6>
-                            <small class="text-muted">Due: {{ due.due_date }}</small>
-                        </div>
-                        <div class="text-right">
-                            <span class="font-weight-bold text-danger">${{ due.amount }}</span>
-                            <input type="checkbox" name="due_ids" value="{{ due.pk }}" class="mr-3 due-checkbox" {% if due.is_paid %}disabled{% endif %}>
-                            <a href="{% url 'payment_page' due.id %}" class="btn btn-sm btn-outline-success ml-2">Pay Now</a>
-                        </div>
-                    </li>
-                    {% empty %}
-                    <li class="list-group-item text-center text-muted">You are all paid up!</li>
-                    {% endfor %}
-                </ul>
-                <div class="d-flex justify-content-end align-items-center mb-3">
-                    <div class="d-flex align-items-center mt-3">
-                        <button type="button" id="select-all-btn" class="btn btn-outline-secondary font-weight-bold mr-2 px-3 py-2">
-                            <i class="far fa-check-square mr-1"></i> Select All
-                        </button>
-                        <button type="submit" id="pay-button" class="btn btn-primary rounded-pill px-4 py-2 shadow-sm font-weight-bold" style="display: none;">
-                            Pay Selected <i class="fas fa-arrow-right ml-2"></i>
-                        </button>
-                    </div>
-                </div>
-            </form>
+
+    <div class="widget span-4">
+        <div class="widget__head">
+            <span class="widget__label">
+                <svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>
+                Unpaid charges
+            </span>
         </div>
+        <p class="widget__value">{{ my_dues|length }}</p>
+        <p class="widget__foot">
+            {% if my_dues %}
+            <span class="chip chip--hatch">Open</span> Waiting on payment
+            {% else %}
+            <span class="chip chip--good">Clear</span> Nothing outstanding
+            {% endif %}
+        </p>
     </div>
-    <div class="col-md-6">
-        <div class="card shadow mb-4">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="fas fa-history"></i> Payment & Aid History</h5>
-            </div>
-            <ul class="list-group list-group-flush">
-                {% for item in my_history %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">{{ item.title }}</h6>
-                        <small class="text-muted">Cleared: {{ item.due_date }}</small>
-                    </div>
-                </li>
-                {% empty %}
-                <li class="list-group-item text-center text-muted">No history yet.</li>
+
+    <div class="widget span-3">
+        <div class="widget__head">
+            <span class="widget__label">
+                <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                Settled
+            </span>
+        </div>
+        <p class="widget__value">{{ my_history|length }}</p>
+        <p class="widget__foot"><span class="chip chip--good">Paid</span> Across all terms</p>
+    </div>
+
+    <section class="card span-7{% if my_dues %} card--accent{% endif %}" id="unpaid">
+        <div class="card__header">
+            <h2 class="card__title">
+                <svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>
+                Unpaid charges
+            </h2>
+        </div>
+
+        {% if my_dues %}
+        <form method="post" action="{% url 'create_bulk_checkout_session' %}" data-select-noun="charge">
+            {% csrf_token %}
+            <div class="rows">
+                {% for due in my_dues %}
+                <label class="row-item" for="due-{{ due.pk }}" style="cursor:pointer">
+                    <input type="checkbox" id="due-{{ due.pk }}" name="due_ids" value="{{ due.pk }}" data-selectable>
+                    <span class="row-item__main">
+                        <span class="row-item__title">{{ due.title }}</span>
+                        <span class="row-item__meta">Due {{ due.due_date|date:"j M Y" }}</span>
+                    </span>
+                    <span class="row-item__value">${{ due.amount }}</span>
+                    <a class="btn btn--outline btn--sm" href="{% url 'payment_page' due.id %}">Pay</a>
+                </label>
                 {% endfor %}
-            </ul>
+            </div>
+
+            <div class="card__footer cluster cluster--between">
+                <button type="button" class="btn btn--quiet btn--sm" data-select-all>Select all</button>
+                <span class="small muted" data-bulk-count>0 charges selected</span>
+                <button type="submit" class="btn btn--primary btn--sm" data-bulk-action disabled>
+                    <svg class="icon" aria-hidden="true"><use href="#i-card"></use></svg>
+                    Pay selected
+                </button>
+            </div>
+        </form>
+        {% else %}
+        {% include "components/empty_state.html" with icon="i-check" title="Nothing outstanding" body="You have no unpaid charges. New dues appear here when your treasurer posts them." %}
+        {% endif %}
+    </section>
+
+    <section class="card span-5">
+        <div class="card__header">
+            <h2 class="card__title">
+                <svg class="icon" aria-hidden="true"><use href="#i-file"></use></svg>
+                Payment history
+            </h2>
         </div>
-    </div>
-</div>
-<script>
-    const payButton = document.getElementById('pay-button');
-    const checkboxes = document.querySelectorAll('.due-checkbox');
-    const selectAllBtn = document.getElementById('select-all-btn');
+        {% if my_history %}
+        <div class="rows">
+            {% for item in my_history %}
+            <div class="row-item">
+                <span class="row-item__main">
+                    <span class="row-item__title">{{ item.title }}</span>
+                    <span class="row-item__meta">Cleared {{ item.due_date|date:"j M Y" }}</span>
+                </span>
+                <span class="row-item__value">${{ item.amount }}</span>
+                {% include "components/status_badge.html" with status="PAID" %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        {% include "components/empty_state.html" with icon="i-file" title="No payments yet" body="Once you pay a charge it moves here as a receipt." %}
+        {% endif %}
+    </section>
 
-    // Your existing visibility logic
-    function toggleButton() {
-        const isAnyChecked = Array.from(checkboxes).some(box => box.checked);
-        payButton.style.display = isAnyChecked ? 'block' : 'none'; // or 'inline-block'
-    }
+</section>
 
-    // --- NEW: Select All Logic ---
-    selectAllBtn.addEventListener('click', function () {
-        // Check if all are currently checked
-        const allChecked = Array.from(checkboxes).every(box => box.checked);
-
-        // If all are checked, uncheck them. Otherwise, check them all.
-        const newState = !allChecked;
-
-        checkboxes.forEach(box => {
-            if (!box.disabled) { // Don't mess with disabled (already paid) boxes
-                box.checked = newState;
-            }
-        });
-
-        // Update the button text
-        selectAllBtn.textContent = newState ? "Deselect All" : "Select All";
-
-        // IMPORTANT: Manually trigger the visibility check
-        toggleButton();
-    });
-
-    // Attach listeners to individual boxes (Your existing code)
-    checkboxes.forEach(box => {
-        box.addEventListener('change', toggleButton);
-    });
-</script>
 {% endblock %}

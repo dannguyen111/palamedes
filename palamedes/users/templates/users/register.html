@@ -1,33 +1,36 @@
 {% extends "homepage/base.html" %}
-{% load crispy_forms_tags %}
+
+{% block container_class %}container--narrow{% endblock %}
+{% block page_header %}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-body">
-                <h3 class="card-title text-center">Join Your Chapter</h3>
 
-                <form method="POST" id="registerForm">
-                    {% csrf_token %}
-                    {{ form|crispy }}
+<div class="stack" style="margin-bottom:var(--sp-6)">
+    <p class="eyebrow">Create account</p>
+    <h1>Join your chapter</h1>
+    <p class="muted">
+        You'll need the invite code from your chapter. We'll email you a link to
+        confirm your address before you can log in.
+    </p>
+</div>
 
-                    <button id="registerBtn" class="btn btn-success btn-block mt-3" type="submit">Register</button>
-                </form>
-
-                <div class="text-center mt-3">
-                    <small>Already have an account? <a href="{% url 'login' %}">Log In</a></small>
-                </div>
-            </div>
-        </div>
+<div class="card">
+    <div class="card__body">
+        {% comment %}
+        data-guard disables the button on submit — registration sends an email,
+        so a double submit is slow and confusing.
+        {% endcomment %}
+        <form method="post" data-guard>
+            {% csrf_token %}
+            {% include "components/form.html" with form=form %}
+            <button type="submit" class="btn btn--primary btn--block btn--lg" data-busy-label="Sending email…">
+                Create account
+            </button>
+        </form>
+    </div>
+    <div class="card__footer small">
+        <p>Already have an account? <a href="{% url 'login' %}">Log in</a></p>
     </div>
 </div>
 
-<script>
-    document.getElementById('registerForm').addEventListener('submit', function () {
-        var btn = document.getElementById('registerBtn');
-        btn.disabled = true; // Locks the button
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending Email...'; // Shows a loading circle
-    });
-</script>
 {% endblock %}

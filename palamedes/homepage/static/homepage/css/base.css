@@ -1,0 +1,279 @@
+/* ============================================================
+   Palamedes — reset, typography, layout primitives
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 6rem;
+}
+
+body,
+h1, h2, h3, h4, h5, h6,
+p, figure, blockquote,
+dl, dd, ol, ul {
+    margin: 0;
+}
+
+ol[class],
+ul[class] {
+    list-style: none;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--step-0);
+    line-height: 1.6;
+    font-weight: 450;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+img,
+picture,
+svg {
+    max-width: 100%;
+    display: block;
+}
+
+/* Any component that sets its own `display` would otherwise beat the user
+   agent's [hidden] rule, and JS toggling `hidden` would silently do
+   nothing. This keeps `hidden` authoritative everywhere. */
+[hidden] {
+    display: none !important;
+}
+
+input,
+button,
+textarea,
+select {
+    font: inherit;
+    color: inherit;
+}
+
+/* ---------- headings: sentence case, tight, never shouted ---------- */
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-wrap: balance;
+}
+
+h1 { font-size: var(--step-4); }
+h2 { font-size: var(--step-2); }
+h3 { font-size: var(--step-1); }
+h4, h5, h6 { font-size: var(--step-0); }
+
+.display-xl {
+    font-size: clamp(var(--step-4), 6.5vw, var(--step-6));
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+    font-weight: 800;
+}
+
+p { text-wrap: pretty; }
+
+a {
+    color: var(--royal);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--rule);
+    margin: var(--sp-5) 0;
+}
+
+/* ---------- focus: always visible, never removed ---------- */
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* On the royal-filled surfaces the ring has to be light to be seen. */
+.stat--feature :focus-visible,
+.widget--feature :focus-visible,
+.sidebar :focus-visible {
+    outline-color: #FFFFFF;
+}
+
+.skip-link {
+    position: absolute;
+    left: var(--sp-3);
+    top: -100%;
+    z-index: 100;
+    background: var(--royal);
+    color: var(--on-royal);
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--radius);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.skip-link:focus-visible { top: var(--sp-3); }
+
+/* ============================================================
+   App shell — fixed sidebar, scrolling main column
+   ============================================================ */
+
+.app {
+    display: grid;
+    grid-template-columns: var(--sidebar) minmax(0, 1fr);
+    min-height: 100vh;
+}
+
+.app__body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.main {
+    flex: 1;
+    padding: var(--sp-6) var(--sp-6) var(--sp-8);
+    width: 100%;
+    max-width: var(--container);
+    margin-inline: auto;
+}
+
+/* Signed out there is no sidebar, so the shell is a single column. */
+.app--plain { grid-template-columns: minmax(0, 1fr); }
+
+/* Below this the sidebar is replaced by the bottom tab bar. */
+@media (max-width: 60rem) {
+    .app { grid-template-columns: minmax(0, 1fr); }
+    .main { padding: var(--sp-5) var(--sp-4) var(--sp-8); }
+}
+
+.container {
+    width: 100%;
+    max-width: var(--container);
+    margin-inline: auto;
+    padding-inline: var(--sp-5);
+}
+
+.container--narrow { max-width: var(--container-narrow); }
+.container--mid { max-width: 48rem; }
+
+/* ============================================================
+   Layout primitives
+   ============================================================ */
+
+.stack > * + * { margin-top: var(--sp-5); }
+.stack--tight > * + * { margin-top: var(--sp-3); }
+.stack--loose > * + * { margin-top: var(--sp-6); }
+
+.cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-3);
+}
+
+.cluster--between { justify-content: space-between; }
+.cluster--end { justify-content: flex-end; }
+.cluster--tight { gap: var(--sp-2); }
+
+.grid {
+    display: grid;
+    gap: var(--sp-5);
+}
+
+.grid--2 { grid-template-columns: repeat(auto-fit, minmax(min(21rem, 100%), 1fr)); }
+.grid--3 { grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); }
+.grid--4 { grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr)); }
+
+.grid--split { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+
+@media (max-width: 64rem) {
+    .grid--split { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- bento: a twelve-column field ----------
+   Widgets claim a span. Below 60rem every widget takes the full width,
+   so the span classes only exist above that breakpoint. `.bento > *`
+   and `.span-*` carry equal specificity, so the span rules must stay
+   below the reset — order is what decides them. */
+
+.bento {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--sp-4);
+    align-items: start;
+}
+
+.bento > * { grid-column: span 12; }
+
+@media (min-width: 60rem) {
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-9 { grid-column: span 9; }
+}
+
+/* ============================================================
+   Text utilities — deliberately few
+   ============================================================ */
+
+.eyebrow {
+    font-size: var(--step--2);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--ink-faint);
+}
+
+.muted { color: var(--ink-muted); }
+.faint { color: var(--ink-faint); }
+.small { font-size: var(--step--1); }
+.lead {
+    font-size: var(--step-1);
+    color: var(--ink-muted);
+    font-weight: 450;
+}
+.center { text-align: center; }
+.nowrap { white-space: nowrap; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ============================================================
+   Motion — opt-in only
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

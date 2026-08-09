@@ -1,0 +1,1744 @@
+/* ============================================================
+   Palamedes — components
+
+   Soft, rounded, low contrast. White cards on a cool grey ground,
+   separated by background and shadow rather than borders. One
+   royal blue does all the brand work.
+   ============================================================ */
+
+/* ============================================================
+   1. Hatching — the signature
+   ------------------------------------------------------------
+   Diagonal hatch means "not counted yet": points awaiting an
+   officer's approval, dues not yet paid. Solid means settled.
+   One device carrying the app's actual state machine, which is
+   why it replaces a third status colour rather than decorating.
+   ============================================================ */
+
+.hatch {
+    background-color: var(--surface-3);
+    background-image: repeating-linear-gradient(
+        45deg,
+        var(--hatch-line) 0 1.5px,
+        transparent 1.5px 7px
+    );
+}
+
+/* ============================================================
+   1b. The standing sentence — the page's opening move
+   ------------------------------------------------------------
+   A screen opens by saying where you stand, in a sentence, with
+   the figures set as marks inside it. The mark's treatment is the
+   meaning, and it reuses the ladder the rest of the app already
+   runs on:
+
+     gold  — counted. Settled points, cleared charges.
+     hatch — not counted yet. Awaiting an officer, or unpaid.
+     blue  — owed. Money the chapter is waiting on.
+
+   No new hue enters the app to do this; gold keeps its existing
+   job of marking progress, and the hatch keeps carrying pending.
+   ============================================================ */
+
+.opener {
+    margin-bottom: var(--sp-4);
+    max-width: 46rem;
+}
+
+.opener__greeting {
+    font-size: clamp(1.375rem, 1.05rem + 1.6vw, 2rem);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+}
+
+.opener__standing {
+    margin-top: var(--sp-3);
+    font-size: clamp(1.0625rem, 0.95rem + 0.55vw, 1.3125rem);
+    font-weight: 600;
+    line-height: 1.65;
+    letter-spacing: -0.01em;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+}
+
+/* The mark itself. The highlight is drawn with a box-shadow spread
+   rather than padding, because padding on an inline box pushes the
+   next character away and leaves the comma after a mark floating a
+   space clear of it. A spread costs no layout, so punctuation sits
+   tight against the highlight exactly as it would against the word.
+
+   Marks never wrap (white-space: nowrap), so the spread never has to
+   survive a line break. */
+.mark {
+    display: inline;
+    border-radius: 3px;
+    font-weight: 800;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    background-color: var(--mark-wash);
+    box-shadow: 0 0 0 0.22em var(--mark-wash);
+}
+
+.mark--counted {
+    --mark-wash: var(--gold-wash);
+    color: var(--gold-ink);
+}
+
+.mark--owed {
+    --mark-wash: var(--royal-100);
+    color: var(--royal);
+}
+
+/* Pending carries the same 45° hatch as the meters and chips, but a
+   mark is only a glyph or two wide. At the meters' 7px pitch a single
+   stripe lands across the numeral and reads as a strike-through, so
+   inside a mark the hatch is drawn at a finer pitch and veiled with
+   the surface colour: still legibly "not counted yet", still a crisp
+   figure. */
+/* --surface-3 sits within a couple of steps of --ground in the light
+   palette, so the pending wash alone all but vanishes on the page. A
+   hairline ring outside the spread gives it an edge in both themes —
+   and an outlined box is the right shape for "not counted yet". */
+.mark--pending {
+    --mark-wash: var(--surface-3);
+    color: var(--ink);
+    box-shadow:
+        0 0 0 0.22em var(--mark-wash),
+        0 0 0 calc(0.22em + 1px) var(--rule-strong);
+    background-image:
+        linear-gradient(
+            color-mix(in srgb, var(--surface-3) 58%, transparent),
+            color-mix(in srgb, var(--surface-3) 58%, transparent)),
+        repeating-linear-gradient(
+            45deg,
+            var(--hatch-line) 0 1px,
+            transparent 1px 4px
+        );
+}
+
+.opener__standing a.mark { text-decoration: none; }
+.opener__standing a.mark:hover { filter: brightness(0.96); }
+
+/* ============================================================
+   2. Sidebar
+   ------------------------------------------------------------
+   Three zones: who you are at the top, where you can go in the
+   middle, and the utilities that close it. Nav icons sit at the
+   trailing edge, where they line up into a quiet rail instead of
+   competing with the labels for the start of each row.
+   ============================================================ */
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-5);
+    padding: var(--sp-4) var(--sp-4) var(--sp-5);
+    background: var(--surface);
+    border-right: 1px solid var(--rule);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* In the sidebar the brand is a closing mark, not a heading — your own
+   name opens the column, the product's name signs it off. The topbar
+   (signed out) still wants it full size, so it sets its own. */
+.sidebar__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-3);
+    border-top: 1px solid var(--rule);
+    padding-top: var(--sp-4);
+    color: var(--ink-faint);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: var(--step--1);
+    letter-spacing: -0.01em;
+}
+
+.sidebar__brand:hover { color: var(--ink-muted); }
+.sidebar__brand .brandmark { width: 1.35rem; height: 1.35rem; }
+
+/* The brand mark. Sits in the sidebar and in the signed-out topbar.
+   color feeds the tile through currentColor, so the mark brightens in
+   dark mode along with every other royal surface. */
+.brandmark {
+    width: 1.85rem;
+    height: 1.85rem;
+    flex-shrink: 0;
+    color: var(--royal);
+}
+
+.sidebar__group { display: block; }
+
+.sidebar__label {
+    padding: 0 var(--sp-3) var(--sp-2);
+    font-size: var(--step--2);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--ink-faint);
+}
+
+.sidebar__link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+    margin-bottom: 2px;
+    border-radius: var(--radius);
+    color: var(--ink-muted);
+    text-decoration: none;
+    font-size: var(--step-0);
+    font-weight: 600;
+    transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.sidebar__link:hover {
+    background: var(--surface-2);
+    color: var(--ink);
+}
+
+.sidebar__link[aria-current="page"] {
+    background: var(--royal-50);
+    color: var(--royal);
+}
+
+/* The marker bar on the active item, as in the reference. */
+.sidebar__link[aria-current="page"]::before {
+    content: "";
+    position: absolute;
+    left: calc(var(--sp-4) * -1);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 1.5rem;
+    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+    background: var(--royal);
+}
+
+/* The icon trails the label and pushes to the far edge, so the icons
+   stack into a rail down the right of the nav. */
+.sidebar__link .icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-left: auto;
+    flex-shrink: 0;
+    color: var(--ink-faint);
+}
+
+.sidebar__link:hover .icon { color: var(--ink-muted); }
+.sidebar__link[aria-current="page"] .icon { color: var(--royal); }
+
+.sidebar__count {
+    font-size: var(--step--2);
+    font-weight: 700;
+    color: var(--royal);
+    background: var(--royal-100);
+    padding: 1px var(--sp-2);
+    border-radius: var(--radius-pill);
+}
+
+.sidebar__spacer { flex: 1; }
+
+/* The identity block that opens the sidebar. */
+.sidebar__user {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+    border-radius: var(--radius-lg);
+    background: var(--surface-2);
+    text-decoration: none;
+    color: inherit;
+}
+
+.sidebar__user:hover { background: var(--surface-3); }
+
+.sidebar__user-name {
+    font-size: var(--step--1);
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar__user-meta {
+    font-size: var(--step--2);
+    color: var(--ink-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 60rem) {
+    .sidebar { display: none; }
+}
+
+/* --- bottom tab bar: the sidebar's mobile form --- */
+
+.tabbar { display: none; }
+
+@media (max-width: 60rem) {
+    .tabbar {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 40;
+        background: var(--surface);
+        border-top: 1px solid var(--rule);
+        padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
+    .tabbar__link {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        padding: var(--sp-2) var(--sp-1);
+        color: var(--ink-faint);
+        text-decoration: none;
+        font-size: 0.625rem;
+        font-weight: 700;
+    }
+
+    .tabbar__link .icon { width: 1.25rem; height: 1.25rem; }
+    .tabbar__link[aria-current="page"] { color: var(--royal); }
+
+    body { padding-bottom: 4.25rem; }
+}
+
+/* ============================================================
+   3. Top bar (signed out only)
+   ============================================================ */
+
+.topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--rule);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+}
+
+.topbar__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    min-height: 4rem;
+}
+
+.topbar__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-3);
+    margin-right: auto;
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 800;
+    font-size: var(--step-2);
+    letter-spacing: -0.03em;
+}
+
+.topbar__link {
+    color: var(--ink-muted);
+    text-decoration: none;
+    font-size: var(--step-0);
+    font-weight: 600;
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--radius);
+}
+
+.topbar__link:hover { color: var(--ink); background: var(--surface-2); }
+
+/* ============================================================
+   4. Page header
+   ============================================================ */
+
+.page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+    margin-bottom: var(--sp-5);
+}
+
+.page-header__title {
+    font-size: var(--step-4);
+    letter-spacing: -0.03em;
+}
+
+.page-header__back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    font-size: var(--step--1);
+    font-weight: 600;
+    color: var(--ink-muted);
+    text-decoration: none;
+    margin-bottom: var(--sp-2);
+}
+
+.page-header__back:hover { color: var(--ink); }
+.page-header__back .icon { width: 0.9rem; height: 0.9rem; }
+
+.page-header__actions {
+    display: flex;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   5. Stat cards
+   ------------------------------------------------------------
+   A row of them opens each main screen. Exactly one per screen
+   is filled royal — the number that screen exists to answer.
+   ============================================================ */
+
+.stat {
+    display: block;
+    position: relative;
+    background: var(--surface);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-5);
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+
+a.stat:hover {
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+    color: inherit;
+}
+
+.stat__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    margin-bottom: var(--sp-5);
+}
+
+.stat__label {
+    font-size: var(--step-0);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+/* The circled arrow in the reference. Decorative here — the whole
+   card is the link — so it is hidden from assistive tech. */
+.stat__go {
+    display: grid;
+    place-items: center;
+    width: 1.85rem;
+    height: 1.85rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--rule-strong);
+    color: var(--ink-muted);
+}
+
+.stat__go .icon { width: 0.8rem; height: 0.8rem; }
+
+.stat__value {
+    font-size: var(--step-5);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.045em;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat__foot {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    margin-top: var(--sp-4);
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+}
+
+/* The small square counter beside the caption in the reference. */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 1px var(--sp-2);
+    border-radius: var(--radius-sm);
+    background: var(--surface-3);
+    color: var(--ink-muted);
+    font-size: var(--step--2);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.chip--good { background: var(--good-wash); color: var(--good); }
+.chip--hatch { color: var(--ink-muted); }
+
+/* --- the one filled card --- */
+
+.stat--feature {
+    background: linear-gradient(150deg, var(--royal-700) 0%, var(--royal-deep) 100%);
+    color: var(--on-royal);
+    box-shadow: var(--shadow-royal);
+}
+
+.stat--feature .stat__label,
+.stat--feature .stat__value { color: var(--on-royal); }
+
+.stat--feature .stat__foot { color: rgba(255, 255, 255, .72); }
+
+.stat--feature .stat__go {
+    border-color: rgba(255, 255, 255, .35);
+    color: var(--on-royal);
+}
+
+.stat--feature .chip,
+.widget--feature .chip {
+    background: rgba(255, 255, 255, .16);
+    color: var(--on-royal);
+}
+
+a.stat--feature:hover { color: var(--on-royal); }
+
+/* ============================================================
+   6. Meter — solid is settled, hatched is not
+   ============================================================ */
+
+.meter {
+    height: 0.6rem;
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    background-color: var(--surface-3);
+    background-image: repeating-linear-gradient(
+        45deg,
+        var(--hatch-line) 0 1.5px,
+        transparent 1.5px 7px
+    );
+}
+
+.meter__fill {
+    height: 100%;
+    border-radius: var(--radius-pill);
+    background: var(--royal);
+}
+
+.stat--feature .meter,
+.widget--feature .meter {
+    background-color: rgba(255, 255, 255, .14);
+    background-image: repeating-linear-gradient(
+        45deg,
+        rgba(255, 255, 255, .34) 0 1.5px,
+        transparent 1.5px 7px
+    );
+}
+
+.stat--feature .meter__fill,
+.widget--feature .meter__fill { background: #FFFFFF; }
+
+.meter__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-4);
+    margin-top: var(--sp-3);
+    font-size: var(--step--2);
+    color: var(--ink-muted);
+}
+
+.meter__key {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+.meter__swatch {
+    width: 1.5rem;
+    height: 0.55rem;
+    border-radius: var(--radius-pill);
+    background: var(--royal);
+    flex-shrink: 0;
+}
+
+/* Wider than it is tall, and hatched at the same pitch as the meter, so
+   the key reads as a slice of the bar rather than as an icon. */
+.meter__swatch--hatch {
+    background-color: var(--surface-3);
+    background-image: repeating-linear-gradient(
+        45deg,
+        var(--hatch-line) 0 1.5px,
+        transparent 1.5px 7px
+    );
+}
+
+.stat--feature .meter__legend,
+.widget--feature .meter__legend { color: rgba(255, 255, 255, .72); }
+.stat--feature .meter__swatch,
+.widget--feature .meter__swatch { background: #FFFFFF; }
+
+.stat--feature .meter__swatch--hatch,
+.widget--feature .meter__swatch--hatch {
+    background-color: rgba(255, 255, 255, .14);
+    background-image: repeating-linear-gradient(
+        45deg,
+        rgba(255, 255, 255, .5) 0 1.5px,
+        transparent 1.5px 5px
+    );
+}
+
+/* ============================================================
+   7. Card
+   ============================================================ */
+
+/* Cards and widgets are the same surface at different sizes, so they
+   share a border, radius and shadow. Only the internal rhythm differs:
+   a card is a section with a titled header, a widget is a bento block
+   with a micro-label. */
+.card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--rule);
+    overflow: hidden;
+}
+
+.card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    padding: var(--sp-5) var(--sp-5) var(--sp-4);
+}
+
+/* A card's title is set in the same micro-label as a widget's, so a
+   page mixing the two still reads as one system. */
+.card__title {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.085em;
+    color: var(--ink-faint);
+}
+
+.card__title .icon {
+    width: 0.9rem;
+    height: 0.9rem;
+    color: var(--ink-faint);
+}
+
+.card__body { padding: 0 var(--sp-5) var(--sp-5); }
+.card__body--flush { padding: 0; }
+
+.card__footer {
+    padding: var(--sp-4) var(--sp-5);
+    border-top: 1px solid var(--rule);
+    background: var(--surface-2);
+}
+
+/* Used for the approval queue — the only genuinely urgent thing. */
+.card--accent {
+    box-shadow: var(--shadow), 0 0 0 1px var(--royal-100);
+}
+
+/* ============================================================
+   7b. Widgets — the bento block
+   ------------------------------------------------------------
+   A widget names itself in a small, quiet label and then gives the
+   content the whole voice. That inversion is the point: the label
+   is scaffolding, the number or the list is what you came for. So
+   the label never grows and the content never shrinks.
+   ============================================================ */
+
+.widget {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+    padding: var(--sp-5);
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--rule);
+    min-width: 0;
+}
+
+/* Anchors are widgets too. Reset the link styling they arrive with. */
+a.widget {
+    color: inherit;
+    text-decoration: none;
+    transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+a.widget:hover {
+    border-color: var(--rule-strong);
+    box-shadow: var(--shadow);
+}
+
+.widget__head {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    min-height: 1.25rem;
+}
+
+.widget__label {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.085em;
+    color: var(--ink-faint);
+}
+
+.widget__label .icon {
+    width: 0.9rem;
+    height: 0.9rem;
+    color: var(--ink-faint);
+}
+
+/* Anything after the label is pushed to the trailing edge: a count, a
+   "view all" link, a status pill. */
+.widget__head > :nth-child(2) { margin-left: auto; }
+
+.widget__value {
+    font-size: clamp(1.875rem, 1.4rem + 1.9vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+}
+
+.widget__foot {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+    margin-top: auto;
+}
+
+.widget__link {
+    font-size: var(--step--2);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--royal);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+}
+
+.widget__link .icon { width: 0.8rem; height: 0.8rem; }
+.widget__link:hover { text-decoration: underline; }
+
+/* The one filled widget per screen. */
+.widget--feature {
+    background: var(--royal-deep);
+    border-color: transparent;
+    box-shadow: var(--shadow-royal);
+}
+
+.widget--feature .widget__label,
+.widget--feature .widget__label .icon { color: rgba(255, 255, 255, .62); }
+.widget--feature .widget__value { color: var(--on-royal); }
+.widget--feature .widget__foot { color: rgba(255, 255, 255, .72); }
+
+/* A widget whose body is a list runs the rows edge to edge. */
+.widget--rows { padding: var(--sp-5) 0 0; gap: var(--sp-3); }
+.widget--rows > .widget__head { padding-inline: var(--sp-5); }
+.widget--rows > .rows { margin-bottom: 0; }
+.widget--rows > .empty { padding-inline: var(--sp-5); }
+
+/* ---------- inset: a labelled panel inside a widget ----------
+   Facts that belong together but aren't the headline. The key is set
+   in the same micro-label as the widget's own, one level in. */
+
+.inset-grid {
+    display: grid;
+    gap: var(--sp-2);
+    grid-template-columns: repeat(auto-fit, minmax(min(7rem, 100%), 1fr));
+}
+
+.inset {
+    padding: var(--sp-3);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    min-width: 0;
+}
+
+.inset__key {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.085em;
+    color: var(--ink-faint);
+}
+
+.inset__value {
+    margin-top: 2px;
+    font-size: var(--step--1);
+    font-weight: 700;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.widget--feature .inset { background: rgba(255, 255, 255, .09); }
+.widget--feature .inset__key { color: rgba(255, 255, 255, .60); }
+.widget--feature .inset__value { color: var(--on-royal); }
+
+/* ---------- action bar: what you actually came to do ----------
+   Closes a screen with the handful of real actions it offers, in one
+   rounded tray rather than scattered through the page. */
+
+.actionbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-3);
+    margin-block: 0 var(--sp-6);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-sm);
+}
+
+.actionbar__label {
+    padding-inline: var(--sp-3);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.085em;
+    color: var(--ink-faint);
+    margin-right: auto;
+}
+
+@media (max-width: 40rem) {
+    .actionbar { border-radius: var(--radius-lg); }
+    .actionbar__label { width: 100%; margin-bottom: var(--sp-1); }
+}
+
+/* ============================================================
+   8. Buttons — pill shaped, one filled style
+   ============================================================ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-5);
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: var(--step-0);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease),
+                color var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+
+.btn:hover { text-decoration: none; }
+.btn:active { transform: translateY(1px); }
+
+.btn[disabled],
+.btn[aria-disabled="true"] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn .icon { width: 1rem; height: 1rem; }
+
+.btn--primary {
+    background: var(--royal);
+    color: var(--on-royal);
+    border-color: var(--royal);
+}
+
+.btn--primary:hover {
+    background: var(--royal-700);
+    border-color: var(--royal-700);
+    color: var(--on-royal);
+}
+
+.btn--outline {
+    background: var(--surface);
+    border-color: var(--rule-strong);
+    color: var(--ink);
+}
+
+.btn--outline:hover { border-color: var(--ink-faint); color: var(--ink); }
+
+.btn--quiet {
+    background: transparent;
+    border-color: transparent;
+    color: var(--ink-muted);
+}
+
+.btn--quiet:hover { background: var(--surface-2); color: var(--ink); }
+
+.btn--sm { padding: var(--sp-2) var(--sp-4); font-size: var(--step--1); }
+.btn--lg { padding: var(--sp-4) var(--sp-6); font-size: var(--step-1); }
+.btn--block { width: 100%; }
+
+.btn--icon {
+    padding: var(--sp-2);
+    aspect-ratio: 1;
+    border-radius: 50%;
+}
+
+/* ============================================================
+   9. Forms
+   ============================================================ */
+
+.field { margin-bottom: var(--sp-5); }
+
+.field__label {
+    display: block;
+    font-size: var(--step--1);
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: var(--sp-2);
+}
+
+.field__required { color: var(--royal); }
+
+/* Django renders its own widgets and a template can't attach a class to
+   them, so the treatment is declared twice: once on explicit classes for
+   hand-written markup, once scoped to .field for whatever the form emits. */
+.input,
+.select,
+.textarea,
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.field select,
+.field textarea {
+    width: 100%;
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--surface);
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-size: var(--step-0);
+    font-family: inherit;
+    transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.input:hover,
+.select:hover,
+.textarea:hover,
+.field input:hover,
+.field select:hover,
+.field textarea:hover { border-color: var(--ink-faint); }
+
+.input:focus,
+.select:focus,
+.textarea:focus,
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    outline: none;
+    border-color: var(--royal);
+    box-shadow: 0 0 0 4px var(--royal-50);
+}
+
+.textarea,
+.field textarea { min-height: 7rem; resize: vertical; }
+
+.select,
+.field select {
+    appearance: none;
+    padding-right: var(--sp-7);
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                      linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: calc(100% - 20px) calc(50% + 2px), calc(100% - 14px) calc(50% + 2px);
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+}
+
+.field input[type="file"] {
+    width: 100%;
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+}
+
+.field input[type="file"]::file-selector-button {
+    margin-right: var(--sp-3);
+    padding: var(--sp-2) var(--sp-4);
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: var(--step--1);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.field input[type="checkbox"],
+.field input[type="radio"] {
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--royal);
+    cursor: pointer;
+    vertical-align: -0.15em;
+    margin-right: var(--sp-2);
+}
+
+.field__help {
+    margin-top: var(--sp-2);
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+}
+
+.field__error {
+    margin-top: var(--sp-2);
+    font-size: var(--step--1);
+    color: var(--bad);
+    font-weight: 600;
+}
+
+.field--invalid .input,
+.field--invalid .select,
+.field--invalid .textarea { border-color: var(--bad); }
+
+.check {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-3);
+    padding: var(--sp-2) 0;
+    cursor: pointer;
+}
+
+.check input[type="checkbox"],
+.check input[type="radio"] {
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: 0;
+    flex-shrink: 0;
+    accent-color: var(--royal);
+    cursor: pointer;
+}
+
+.check__text { font-size: var(--step-0); }
+
+.choice-group {
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-4);
+    background: var(--surface-2);
+}
+
+.choice-group legend {
+    font-size: var(--step--1);
+    font-weight: 700;
+    color: var(--ink);
+    padding-inline: var(--sp-2);
+}
+
+.choice-group label {
+    display: inline-flex;
+    align-items: center;
+    font-size: var(--step-0);
+    cursor: pointer;
+}
+
+.choice-group > div { padding-block: var(--sp-1); }
+
+.field-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+    gap: 0 var(--sp-4);
+}
+
+/* ============================================================
+   10. Tables
+   ============================================================ */
+
+.table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+}
+
+.table th,
+.table td {
+    padding: var(--sp-3) var(--sp-5);
+    text-align: left;
+    vertical-align: middle;
+}
+
+.table thead th {
+    padding-block: var(--sp-2) var(--sp-3);
+    font-size: var(--step--2);
+    font-weight: 700;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--rule);
+}
+
+.table tbody td { border-bottom: 1px solid var(--rule); }
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr { transition: background var(--fast) var(--ease); }
+.table tbody tr:hover { background: var(--surface-2); }
+
+.table__num {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+/* Your own row — the one place the table picks up the brand colour. */
+.table tbody tr.is-you { background: var(--royal-50); }
+.table tbody tr.is-you:hover { background: var(--royal-50); }
+.table tbody tr.is-you td:first-child { font-weight: 700; color: var(--royal); }
+
+/* ============================================================
+   11. List rows
+   ============================================================ */
+
+.rows { display: block; }
+
+.row-item {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    padding: var(--sp-3) var(--sp-5);
+    border-bottom: 1px solid var(--rule);
+}
+
+.rows > .row-item:last-child { border-bottom: 0; }
+
+.row-item__main { flex: 1; min-width: 0; }
+
+/* Often marked up as spans (inside a <label>, where block children are
+   awkward), so display has to be forced. */
+.row-item__title {
+    display: block;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.row-item__meta {
+    display: block;
+    font-size: var(--step--2);
+    color: var(--ink-muted);
+}
+
+/* Running text inside a row — an announcement's body, a rejection's
+   reason. Unlike the title it wraps, and it is clamped so one long
+   post can't push the rest of the list off the screen. */
+.row-item__body {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    margin-top: var(--sp-1);
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+    line-height: 1.55;
+}
+
+.row-item__value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    font-size: var(--step-0);
+}
+
+.row-item.is-you { background: var(--royal-50); }
+.row-item.is-you .row-item__title { color: var(--royal); }
+
+/* Standing, not decorative numbering — the reader wants the rank. */
+.rank {
+    min-width: 1.75rem;
+    font-size: var(--step--1);
+    font-weight: 700;
+    color: var(--ink-faint);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+.row-item.is-you .rank { color: var(--royal); }
+
+.scroll-pane { max-height: 24rem; overflow-y: auto; }
+
+/* ============================================================
+   12. Status pills
+   ------------------------------------------------------------
+   One ladder for the whole app. Two colours plus the hatch —
+   pending has no colour of its own because "not counted yet" is
+   exactly what the hatch already says.
+   ============================================================ */
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+    padding: 2px var(--sp-3);
+    border-radius: var(--radius-pill);
+    font-size: var(--step--2);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.pill--good { background: var(--good-wash); color: var(--good); }
+.pill--bad { background: var(--bad-wash); color: var(--bad); }
+.pill--accent { background: var(--royal-100); color: var(--royal); }
+.pill--neutral { background: var(--surface-3); color: var(--ink-muted); }
+
+.pill--pending {
+    color: var(--ink-muted);
+    background-color: var(--surface-3);
+    background-image: repeating-linear-gradient(
+        45deg,
+        var(--hatch-line) 0 1.5px,
+        transparent 1.5px 7px
+    );
+}
+
+.pill--class {
+    background: transparent;
+    color: var(--ink-muted);
+    box-shadow: inset 0 0 0 1px var(--rule-strong);
+}
+
+.count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding-inline: var(--sp-2);
+    border-radius: var(--radius-pill);
+    background: var(--royal);
+    color: var(--on-royal);
+    font-size: var(--step--2);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   13. Avatar
+   ============================================================ */
+
+.avatar {
+    --size: 2.5rem;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--surface-3);
+    flex-shrink: 0;
+}
+
+.avatar--sm { --size: 2rem; }
+.avatar--md { --size: 3.25rem; }
+.avatar--lg { --size: 6rem; }
+.avatar--xl { --size: 8.5rem; }
+
+.avatar--initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: calc(var(--size) * 0.36);
+    color: var(--ink-muted);
+    text-transform: uppercase;
+}
+
+/* ============================================================
+   14. Member card
+   ============================================================ */
+
+.member-card {
+    position: relative;
+    background: var(--surface);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-5);
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+
+.member-card:hover {
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+}
+
+.member-card__name {
+    margin-top: var(--sp-3);
+    font-size: var(--step-1);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.member-card__meta {
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+    margin-top: 2px;
+}
+
+/* Covers the card so the name is the click target; anything that must
+   stay clickable on top of it gets .above. */
+.stretch::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.above { position: relative; z-index: 2; }
+
+.member-card__select {
+    position: absolute;
+    top: var(--sp-4);
+    left: var(--sp-4);
+    z-index: 3;
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--royal);
+    cursor: pointer;
+}
+
+/* ============================================================
+   15. Tabs
+   ============================================================ */
+
+.tabs {
+    display: inline-flex;
+    gap: var(--sp-1);
+    padding: var(--sp-1);
+    border-radius: var(--radius-pill);
+    background: var(--surface-3);
+    overflow-x: auto;
+    scrollbar-width: none;
+    max-width: 100%;
+}
+
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+    padding: var(--sp-2) var(--sp-5);
+    background: none;
+    border: 0;
+    border-radius: var(--radius-pill);
+    color: var(--ink-muted);
+    font-size: var(--step--1);
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.tab:hover { color: var(--ink); }
+
+.tab[aria-selected="true"],
+.tab.is-active {
+    background: var(--surface);
+    color: var(--royal);
+    box-shadow: var(--shadow-sm);
+}
+
+.tab-panel[hidden] { display: none; }
+
+/* ============================================================
+   16. Dropdown
+   ============================================================ */
+
+.dropdown { position: relative; display: inline-block; }
+
+.dropdown__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+    background: none;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.dropdown__toggle .icon {
+    width: 0.7rem;
+    height: 0.7rem;
+    transition: transform var(--fast) var(--ease);
+}
+
+.dropdown__toggle[aria-expanded="true"] .icon { transform: rotate(180deg); }
+
+.dropdown__menu {
+    position: absolute;
+    top: calc(100% + var(--sp-2));
+    left: 0;
+    z-index: 50;
+    min-width: 12rem;
+    max-height: 18rem;
+    overflow-y: auto;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--sp-2);
+}
+
+.dropdown__menu[hidden] { display: none; }
+.dropdown__menu--right { left: auto; right: 0; }
+
+.dropdown__item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    text-decoration: none;
+    font-size: var(--step--1);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.dropdown__item:hover { background: var(--surface-2); color: var(--ink); text-decoration: none; }
+
+.dropdown__item[aria-current="true"] {
+    background: var(--royal-50);
+    color: var(--royal);
+    font-weight: 700;
+}
+
+/* ============================================================
+   17. Dialog
+   ============================================================ */
+
+.dialog {
+    width: min(28rem, calc(100vw - 2rem));
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow-lg);
+}
+
+.dialog::backdrop {
+    background: rgba(10, 14, 26, .5);
+    backdrop-filter: blur(3px);
+}
+
+.dialog__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    padding: var(--sp-5) var(--sp-5) var(--sp-3);
+}
+
+.dialog__title { font-size: var(--step-1); }
+.dialog__body { padding: 0 var(--sp-5) var(--sp-5); }
+
+.dialog__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--sp-2);
+    padding: var(--sp-4) var(--sp-5);
+    border-top: 1px solid var(--rule);
+    background: var(--surface-2);
+}
+
+/* ============================================================
+   18. Alerts + toasts
+   ============================================================ */
+
+.alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-3);
+    padding: var(--sp-4);
+    border-radius: var(--radius-lg);
+    background: var(--surface-2);
+    color: var(--ink);
+    font-size: var(--step--1);
+}
+
+.alert__body { flex: 1; }
+.alert .icon { width: 1.1rem; height: 1.1rem; flex-shrink: 0; margin-top: 2px; }
+
+.alert--success { background: var(--good-wash); color: var(--good); }
+.alert--error,
+.alert--danger { background: var(--bad-wash); color: var(--bad); }
+.alert--warning { background: var(--royal-50); color: var(--royal); }
+.alert--info { background: var(--surface-3); color: var(--ink); }
+
+.alert__close {
+    background: none;
+    border: 0;
+    padding: var(--sp-1);
+    cursor: pointer;
+    color: currentColor;
+    opacity: 0.55;
+    line-height: 1;
+    font-size: 1.1rem;
+}
+
+.alert__close:hover { opacity: 1; }
+
+.toasts {
+    position: fixed;
+    top: var(--sp-4);
+    right: var(--sp-4);
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    width: min(24rem, calc(100vw - 2rem));
+    pointer-events: none;
+}
+
+.toasts .alert {
+    pointer-events: auto;
+    box-shadow: var(--shadow-lg);
+    background: var(--surface);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .toasts .alert { animation: toast-in var(--slow) var(--ease); }
+
+    @keyframes toast-in {
+        from { opacity: 0; transform: translateY(-0.5rem); }
+        to { opacity: 1; transform: none; }
+    }
+}
+
+/* ============================================================
+   19. Empty state
+   ============================================================ */
+
+.empty {
+    padding: var(--sp-7) var(--sp-5);
+    text-align: center;
+    color: var(--ink-muted);
+}
+
+.empty .icon {
+    width: 1.6rem;
+    height: 1.6rem;
+    margin: 0 auto var(--sp-3);
+    color: var(--ink-faint);
+}
+
+.empty__title {
+    font-size: var(--step-0);
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: var(--sp-1);
+}
+
+.empty__body { font-size: var(--step--1); }
+
+/* ============================================================
+   20. Icons
+   ============================================================ */
+
+.icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+    display: inline-block;
+    vertical-align: -0.15em;
+}
+
+/* The theme toggle shows the theme you would switch TO, so only one of
+   the pair is ever visible. Must come after .icon sets display. */
+.icon--dark-only { display: none; }
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .icon--dark-only { display: inline-block; }
+    :root:not([data-theme="light"]) .icon--light-only { display: none; }
+}
+
+:root[data-theme="dark"] .icon--dark-only { display: inline-block; }
+:root[data-theme="dark"] .icon--light-only { display: none; }
+
+/* ============================================================
+   21. Disclosure
+   ============================================================ */
+
+.disclosure > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+    padding: var(--sp-1) 0;
+    cursor: pointer;
+    font-size: var(--step--1);
+    font-weight: 600;
+    color: var(--ink-muted);
+    list-style: none;
+}
+
+.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure > summary:hover { color: var(--royal); }
+.disclosure > summary .icon { width: 0.7rem; height: 0.7rem; transition: transform var(--fast) var(--ease); }
+.disclosure[open] > summary .icon { transform: rotate(180deg); }
+
+.disclosure__body {
+    padding: var(--sp-4);
+    background: var(--surface-2);
+    border-radius: var(--radius-lg);
+}
+
+/* ============================================================
+   22. Footer
+   ============================================================ */
+
+.footer {
+    margin-top: auto;
+    padding-block: var(--sp-6);
+    font-size: var(--step--1);
+    color: var(--ink-muted);
+    border-top: 1px solid var(--rule);
+}
+
+.footer__inner {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sp-5);
+    flex-wrap: wrap;
+}
+
+.footer__brand {
+    color: var(--ink);
+    font-weight: 800;
+    font-size: var(--step-1);
+    letter-spacing: -0.02em;
+    margin-bottom: var(--sp-1);
+}
+
+.footer__links { display: flex; gap: var(--sp-4); flex-wrap: wrap; }
+.footer a { color: var(--ink-muted); text-decoration: none; }
+.footer a:hover { color: var(--royal); }
+
+@media (max-width: 60rem) {
+    .footer { padding-bottom: var(--sp-7); }
+}
+
+/* ============================================================
+   23. Marketing
+   ============================================================ */
+
+.hero { padding-block: clamp(var(--sp-5), 5vw, var(--sp-8)); }
+
+.feature__icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.6rem;
+    border-radius: var(--radius);
+    background: var(--royal-50);
+    color: var(--royal);
+    margin-bottom: var(--sp-4);
+    stroke-width: 1.75;
+}
+
+.feature__title {
+    font-size: var(--step-1);
+    font-weight: 800;
+    margin-bottom: var(--sp-2);
+}
+
+.feature__body { color: var(--ink-muted); font-size: var(--step-0); }
+
+/* ============================================================
+   24. Misc
+   ============================================================ */
+
+.divider-or {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    color: var(--ink-faint);
+    font-size: var(--step--2);
+    font-weight: 700;
+    margin-block: var(--sp-5);
+}
+
+.divider-or::before,
+.divider-or::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+}
+
+.receipt-line {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    padding: var(--sp-3) 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: var(--step--1);
+}
+
+.receipt-line:last-child { border-bottom: 0; }
+.receipt-line dt { color: var(--ink-muted); }
+.receipt-line dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.filter-bar {
+    display: flex;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-bar .input { flex: 1 1 16rem; width: auto; border-radius: var(--radius-pill); }
+.filter-bar .select { flex: 0 1 12rem; width: auto; border-radius: var(--radius-pill); }
+
+.bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+    padding: var(--sp-3) var(--sp-5);
+    background: var(--royal-deep);
+    color: #FFFFFF;
+    border-radius: var(--radius-lg);
+}
+
+.bulk-bar__count {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    margin-right: auto;
+    font-size: var(--step--1);
+}

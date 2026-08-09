@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Palamedes">
+  <!--
+    Palamedes brand mark — a tally of five.
+
+    Palamedes is credited in Greek legend with inventing number and
+    counting, which is also the whole job of this app: points, dues,
+    members. Four uprights and a slash, set in a royal tile.
+
+    One geometry, used at every size. It is repeated in brand/favicon.svg
+    and in the #i-logo symbol in homepage/partials/icon_sprite.html —
+    change one, change all three.
+
+    stroke-width is 3.4 rather than the ~2.9 the shape wants optically at
+    large sizes. That is deliberate: the mark is drawn at 16px in the
+    browser tab, where thinner uprights silt together into a smudge. 3.4
+    is the lightest weight whose four uprights still resolve into separate
+    pixels at 16, and it costs nothing at 30px, where the mark actually
+    lives in the UI.
+  -->
+  <rect width="32" height="32" rx="8" fill="#2547CE"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round">
+    <path d="M9.5 7.8v16.4M13.85 7.8v16.4M18.2 7.8v16.4M22.55 7.8v16.4"/>
+    <path d="M7.9 22.2 24.1 9.8"/>
+  </g>
+</svg>
