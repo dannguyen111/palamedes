@@ -705,15 +705,28 @@ across almost every view with a mutation or permission denial. Tests can assert 
 `response.context['messages']` or by checking redirected-to page's rendered content,
 or directly inspect `list(get_messages(response.wsgi_request))`.
 
-### Known bugs / broken code paths (do not silently "fix" while writing tests — document via tests that pin current behavior, or flag explicitly if the task later asks for fixes)
+### Known bugs / broken code paths (do not silently "fix" while writing tests — document via tests that pin current behavior; a GitHub issue gets filed for each one confirmed by a passing test, per the user's standing instruction from Phase 6 onward)
 - `_helper_bulk_transaction` (`dashboard/views.py`) `PLEDGE_CLASS` branch:
   `members.get('pledge_semester')` and `members.filer(...)` — both invalid, will raise.
+  Confirmed + pinned in Phase 5. **[Issue #50](https://github.com/dannguyen111/palamedes/issues/50)**.
 - `dues_dashboard`, `manage_point_request` (`is_top2`), `mark_paid`: unguarded
   `request.user.position.<flag>` access — `AttributeError` when `position is None`.
-- `dashboard` view computes `pending_points` but never puts it in the template context (dead code, harmless).
+  Confirmed + pinned in Phase 5. **[Issue #49](https://github.com/dannguyen111/palamedes/issues/49)**.
+- `dashboard` view computes `pending_points` but never puts it in the template context (dead code, harmless — no issue filed, not an actual bug).
 - `payment_success` single-payment branch has no `assigned_to`/ownership filter on the `Due` lookup.
-- `make_payment_treasurer` has no permission check at all (any logged-in user can view any due's "mark paid" screen, though it appears to be read-only/display-only based on the view code — confirm template doesn't expose a mutation form without a corresponding permission-checked POST handler).
+  Confirmed + pinned in Phase 6. **[Issue #54](https://github.com/dannguyen111/palamedes/issues/54)**.
+- `make_payment_treasurer` has no permission check at all (any logged-in user can view any due's "mark paid" screen).
+  Confirmed + pinned in Phase 6. **[Issue #52](https://github.com/dannguyen111/palamedes/issues/52)**.
 - `dues_member` has no `@login_required` and no chapter scoping.
+  Confirmed + pinned in Phase 6. **[Issue #51](https://github.com/dannguyen111/palamedes/issues/51)**.
+- `process_payment`'s `due_amount` parsing (`int(float(request.POST.get('due_amount')) * 100)`)
+  sits outside the try/except wrapping the Stripe call, so a missing/non-numeric amount
+  crashes uncaught instead of getting the graceful JSON 500 the Stripe call itself gets.
+  Confirmed + pinned in Phase 6. **[Issue #53](https://github.com/dannguyen111/palamedes/issues/53)**.
+- `create_bulk_checkout_session`/`process_payment` call `redirect(url, code=303)`, but Django's
+  `redirect()` shortcut has no `code` kwarg — it's silently ignored, so the actual response is a
+  plain 302, not 303. Harmless in practice (redirecting to Stripe's hosted checkout is a GET
+  either way regardless of 302 vs 303) — no issue filed, cosmetic only.
 - Dead templates `inbox.html`, `ledger.html` with corresponding commented-out URL routes and no view functions — not testable/relevant.
 - `CustomUser.save()` PIL-based image-thumbnailing override is commented out (dead code) — don't test for thumbnailing.
 

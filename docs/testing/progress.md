@@ -232,9 +232,55 @@ matters, don't just chase the coverage number.
 Branch: `tests/phase-5-dashboard-workflows`, 2 commits, not yet merged —
 pending user check-in.
 
-## Phase 6 — Stripe-integrated payment views — not started
+## Phase 6 — Stripe-integrated payment views — **DONE**
 
-Stub file ready: `test_views_payments.py`.
+32 tests added. `dashboard/views.py` up from 83% to **99%** line coverage — the
+only two lines left uncovered (287-288) are unreachable dead code inside the
+already-broken `PLEDGE_CLASS` branch (issue #50), past the line that always
+raises first. Full suite: **229 tests**, all passing. Project-wide `TOTAL`:
+**99%**.
+
+- `payment_page`: ownership 404 boundary.
+- `make_payment_treasurer`: pinned — **no permission check at all**.
+- `dues_member`: pinned — **no `@login_required`, no chapter scoping**, plus
+  ordering behavior.
+- `create_bulk_checkout_session` / `process_payment`: `stripe.checkout.Session.create`
+  mocked for success (redirect to session URL, correct line items/metadata,
+  ownership-filtered `due_ids`) and exception (JSON 500) paths. Also pinned:
+  the `if request.POST:` truthiness quirk (empty POST body silently treated
+  as non-POST), and `process_payment`'s `due_amount` parsing sitting outside
+  the try/except so it crashes uncaught on missing/non-numeric input.
+- `payment_success`: `stripe.checkout.Session.retrieve` mocked for
+  missing-session_id, retrieve-exception, bulk-payment (ownership-scoped),
+  single-payment (full/partial), and replay/idempotency
+  (`processed_sessions` in the Django session) paths. Pinned: the
+  single-payment branch's `Due` lookup has **no ownership filter**, unlike
+  every sibling payment view.
+
+**GitHub issues filed this phase** (per user request — bugs found while
+testing now get filed for a future fix-bugs pass, not just documented in
+these notes):
+- [#49](https://github.com/dannguyen111/palamedes/issues/49) — unguarded
+  `position` AttributeError in `dues_dashboard`/`manage_point_request`/`mark_paid`
+  (confirmed in Phase 5, filed retroactively at the start of this phase)
+- [#50](https://github.com/dannguyen111/palamedes/issues/50) — broken
+  `PLEDGE_CLASS` bulk-dues branch (confirmed in Phase 5, filed retroactively)
+- [#51](https://github.com/dannguyen111/palamedes/issues/51) — `dues_member`
+  has no auth/chapter-scoping
+- [#52](https://github.com/dannguyen111/palamedes/issues/52) —
+  `make_payment_treasurer` has no permission check
+- [#53](https://github.com/dannguyen111/palamedes/issues/53) —
+  `process_payment` crashes uncaught on bad `due_amount`
+- [#54](https://github.com/dannguyen111/palamedes/issues/54) —
+  `payment_success` single-payment branch has no ownership check
+
+**Going forward**: file a GitHub issue for every newly-confirmed bug (pinned
+by a passing test), the same way — see the issue bodies above for the
+template (Summary / Location / Impact / How this was found / Suggested fix,
+with a link to the pinning test).
+
+Branch: `tests/phase-6-dashboard-payments`, 1 commit, not yet merged —
+pending user check-in.
 
 ## Phase 7 — coverage gap-filling & wrap-up — not started
 
@@ -244,17 +290,18 @@ tightly coupled to that app).
 
 ---
 
-## Current coverage snapshot (after Phase 5)
+## Current coverage snapshot (after Phase 6)
 
-`coverage run manage.py test && coverage report -m` (full suite, 197 tests):
+`coverage run manage.py test && coverage report -m` (full suite, 229 tests):
 
 - `homepage/`, `users/`: **100%** everywhere (unchanged since Phase 2).
 - `dashboard/`: `models.py`, `forms.py`, `admin.py`, `urls.py` all **100%**.
-  `views.py` at **83%** — every view except the Stripe-integrated payment
-  ones (`payment_page`, `create_bulk_checkout_session`, `process_payment`,
-  `payment_success`, `make_payment_treasurer`) is fully covered. That's all
-  that's left, and it's exactly Phase 6.
-- `palamedes/settings.py` at 96% (AWS S3 branch, out of scope), `urls.py` at
-  89% (DEBUG-only static route).
-- Project `TOTAL`: **92%** (up from 67% after Phase 4) — already past the
-  80% target from the original ask. Phase 6 should push this to ~98-100%.
+  `views.py` at **99%** (2 unreachable lines inside the known-broken
+  `PLEDGE_CLASS` branch, issue #50).
+- `palamedes/settings.py` at 96% (AWS S3 branch, only exercised when
+  `AWS_ACCESS_KEY_ID` is set — genuinely out of scope for a local/CI test
+  run), `urls.py` at 89% (DEBUG-only static media route).
+- Project `TOTAL`: **99%** (up from 92% after Phase 5). Only Phase 7 remains
+  — admin.py smoke tests for users/dashboard (already at 100% coverage
+  incidentally, since they're purely declarative, but not yet deliberately
+  tested) and a final sweep for anything missed.
