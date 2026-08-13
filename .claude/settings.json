@@ -1,6 +1,0 @@
-{
-  "model": "openrouter/free",
-  "env": {
-    "ANTHROPIC_BASE_URL": "https://openrouter.ai/api"
-  }
-}
