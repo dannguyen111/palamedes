@@ -282,26 +282,75 @@ with a link to the pinning test).
 Branch: `tests/phase-6-dashboard-payments`, 1 commit, not yet merged —
 pending user check-in.
 
-## Phase 7 — coverage gap-filling & wrap-up — not started
+## Phase 7 — coverage gap-filling & wrap-up — **DONE**
 
-Stub files ready: `users/tests/test_admin.py`, `dashboard/tests/test_admin.py`
-(homepage's admin action test is pulled forward into Phase 1 since it's small and
-tightly coupled to that app).
+19 tests added (10 in `users/tests/test_admin.py`, 9 in
+`dashboard/tests/test_admin.py`). Full suite: **248 tests**, all passing.
+Project-wide `TOTAL` unchanged at **99%** (these tests exercise lines that
+were already counted covered incidentally — `admin.py` files are purely
+declarative registrations — but now the coverage is deliberate, not
+accidental).
+
+- `users/tests/test_admin.py` (10 tests): `PositionAdmin` (changelist +
+  chapter filter, search, change view), `ChapterAdmin` (changelist, search,
+  add view, change view), `CustomUserAdmin` (changelist + chapter/status/
+  is_staff filters, add/change views render the extra "Fraternity Info"
+  fieldset). All driven through the real admin URLs against a logged-in
+  superuser, not just `admin.site._registry` assertions — this actually
+  exercises `list_display`, `list_filter`, `search_fields`, and the custom
+  `fieldsets`/`add_fieldsets` tuples against real rows.
+- `dashboard/tests/test_admin.py` (9 tests): `HousePointAdmin` (changelist +
+  status/chapter filters, search, change view), `DueAdmin` (changelist +
+  is_paid/is_template filters, change view), `TaskAdmin` (changelist +
+  completed/assigned_to filters, change view), `AnnouncementAdmin`
+  (changelist + chapter filter, change view).
+- **Investigated the final 5 uncovered lines** (`dashboard/views.py:287-288`,
+  `palamedes/settings.py:175-176`, `palamedes/urls.py:49`) to confirm none
+  are worth chasing:
+  - `dashboard/views.py:287-288` — unreachable dead code inside the known-broken
+    `PLEDGE_CLASS` bulk-dues branch (issue #50); already correctly pinned in
+    Phase 5.
+  - `palamedes/settings.py:175-176` — **correction to a Phase 6 note below**,
+    which had the branch backwards. This dev machine's `.env` has real AWS
+    credentials set, so `if AWS_ACCESS_KEY_ID:` (S3 storage) is the branch
+    that's *covered*; it's the local-dev-storage `else` branch (lines
+    175-176) that's unreachable here. Either way, this is a module-level
+    settings branch decided once at process start by environment
+    configuration — not something a test can toggle within a run.
+  - `palamedes/urls.py:49` (`if settings.DEBUG: urlpatterns += static(...)`)
+    — confirmed via direct check that `.env` sets `DEBUG=True`, yet the line
+    is still never covered. Root cause: Django's test runner calls
+    `setup_test_environment()`, which force-sets `settings.DEBUG = False` for
+    the duration of `manage.py test` regardless of `.env` — this is
+    documented Django test-runner behavior, not a project bug. The line is
+    structurally unreachable under the standard test command.
+
+  All three remaining gaps are environment/test-runner artifacts rather than
+  untested application logic. **99% is effectively the ceiling** for this
+  codebase under `manage.py test` — no further chasing needed.
+
+Branch: `tests/phase-7-coverage-gaps`, 1 commit, not yet merged — pending
+user check-in. This is the final phase of the original plan.
 
 ---
 
-## Current coverage snapshot (after Phase 6)
+## Final coverage snapshot (after Phase 7)
 
-`coverage run manage.py test && coverage report -m` (full suite, 229 tests):
+`coverage run manage.py test && coverage report -m` (full suite, 248 tests):
 
-- `homepage/`, `users/`: **100%** everywhere (unchanged since Phase 2).
+- `homepage/`, `users/`: **100%** everywhere.
 - `dashboard/`: `models.py`, `forms.py`, `admin.py`, `urls.py` all **100%**.
-  `views.py` at **99%** (2 unreachable lines inside the known-broken
-  `PLEDGE_CLASS` branch, issue #50).
-- `palamedes/settings.py` at 96% (AWS S3 branch, only exercised when
-  `AWS_ACCESS_KEY_ID` is set — genuinely out of scope for a local/CI test
-  run), `urls.py` at 89% (DEBUG-only static media route).
-- Project `TOTAL`: **99%** (up from 92% after Phase 5). Only Phase 7 remains
-  — admin.py smoke tests for users/dashboard (already at 100% coverage
-  incidentally, since they're purely declarative, but not yet deliberately
-  tested) and a final sweep for anything missed.
+  `views.py` at **99%** (2 unreachable lines, issue #50).
+- `palamedes/settings.py` at 96% (AWS S3 vs. local-storage branch — env-decided
+  at process start, see Phase 7 note above), `urls.py` at 89% (DEBUG-gated
+  static media route — unreachable under Django's test runner, see Phase 7
+  note above).
+- Project `TOTAL`: **99%**, well past the original 80% target.
+
+## Task summary
+
+All 7 phases of the original plan are complete: 248 tests across `homepage`,
+`users`, and `dashboard`, 99% project-wide line coverage, zero production code
+changes (tests only, pinning current behavior per the agreed bug-handling
+policy), and 6 GitHub issues filed for genuine bugs found along the way
+(#49-#54, see Phase 6 above) for a future fix-bugs pass.

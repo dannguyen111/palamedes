@@ -70,6 +70,12 @@ contains `manage.py`) unless stated otherwise.
   local/CI test run (no AWS env vars) this branch is **not** exercised — image upload
   tests will use local `MEDIA_ROOT`, so tests writing `CustomUser.image` should clean up
   files or use Django's `override_settings(MEDIA_ROOT=tempdir)`.
+  **Correction (Phase 7):** this specific dev machine's `.env` *does* set real AWS
+  credentials, so on this machine it's actually the **opposite** branch (local
+  `MEDIA_URL`/`MEDIA_ROOT`, settings.py lines 175-176) that goes uncovered by
+  `coverage run manage.py test` — confirmed via `coverage report -m`. Either way
+  it's a module-level branch decided once by environment config at process start,
+  not a per-test-togglable path — not worth chasing for coverage.
 
 ## `palamedes/urls.py` (project-level URLs)
 
