@@ -45,11 +45,36 @@ C:\Users\sidan\anaconda3\envs\palamedes\python.exe -m coverage report -m
 - Verified: `manage.py test` and `coverage run manage.py test && coverage report`
   both run clean with 0 tests, 0 errors.
 
-Branch: `tests/phase-0-infra`. Not yet merged to `main` — pending user check-in.
+Branch: `tests/phase-0-infra`. Merged to `main` via PR #43 (admin override — main
+requires a review approval and no CI is configured, so a straight `gh pr merge`
+was blocked; user chose to bypass with `--admin`).
 
-## Phase 1 — `homepage` app — not started
+## Phase 1 — `homepage` app — **DONE**
 
-Stub files ready at `homepage/tests/{test_models,test_forms,test_views,test_admin}.py`.
+24 tests added, homepage app (models.py, forms.py, views.py, admin.py) at **100%**
+line coverage.
+
+- `test_models.py` (4 tests): `ChapterRequest.__str__`, `is_approved` default,
+  `date_requested` auto-population, direct approval.
+- `test_forms.py` (6 tests): `ChapterRequestForm` valid submission, each required
+  field's validation error, malformed email, `save()` persistence.
+- `test_views.py` (7 tests): `home` (anon vs. authenticated redirect), `about`
+  context, `start_chapter` GET/valid-POST/invalid-POST (incl. success message
+  and DB row assertions). Had to work around a real environment gotcha:
+  `base.html` uses `{% static %}` and WhiteNoise's
+  `CompressedManifestStaticFilesStorage` needs a `collectstatic` manifest that
+  doesn't exist here, so full-page-rendering tests use
+  `override_settings(STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage")`.
+  **This same workaround will be needed in every future phase that renders a
+  full page** (dashboard templates also extend a base with `{% static %}` —
+  confirm/reuse this pattern rather than rediscovering it).
+- `test_admin.py` (7 tests): `approve_requests` action — `is_approved` flip,
+  Chapter `get_or_create` + invite codes, all 4 Position rows' exact permission
+  flags, approval email content/recipient, skip-if-already-approved, idempotent
+  on a second run, and backfilling codes onto a pre-existing codeless Chapter.
+
+Branch: `tests/phase-1-homepage`, 4 commits (one per test file), not yet merged —
+pending user check-in.
 
 ## Phase 2 — `users` app — not started
 
@@ -80,6 +105,14 @@ tightly coupled to that app).
 
 ---
 
-## Current coverage snapshot
+## Current coverage snapshot (after Phase 1)
 
-Not yet measured with real tests (0 tests exist beyond stubs as of Phase 0).
+`coverage run manage.py test && coverage report -m` (full suite, 24 tests):
+
+- `homepage/`: **100%** across `models.py`, `forms.py`, `views.py`, `admin.py`.
+- Everything else (users, dashboard, palamedes settings/urls): unchanged from
+  the Phase 0 baseline (module-level-only coverage from imports, no real
+  tests yet) — that's Phases 2-7.
+- Project `TOTAL`: 48% (up from the Phase 0 baseline of 43%), but this number
+  is dominated by dashboard/users still having no real tests — not a
+  meaningful project-wide signal until later phases land.
