@@ -185,9 +185,52 @@ tests, all passing.
 Branch: `tests/phase-4-dashboard-readviews`, 3 commits, not yet merged —
 pending user check-in.
 
-## Phase 5 — `dashboard` workflow/mutation views — not started
+## Phase 5 — `dashboard` workflow/mutation views — **DONE**
 
-Stub files ready: `test_views_points_workflow.py`, `test_views_dues_workflow.py`.
+83 tests added (52 in the two workflow files + 2 gap-closing additions found
+via coverage during this phase). `dashboard/views.py` up from 30% to **83%**
+line coverage — everything except the Stripe-integrated payment views is now
+covered, exactly on plan for Phase 6. Full suite: **197 tests**, all passing.
+Project-wide `TOTAL`: **92%**, already past the 80% target.
+
+- `test_views_points_workflow.py` (33 tests): `submit_points` (NM vs Active
+  form selection), `assign_points` (Actives always permitted incl.
+  position=None short-circuit, NMs need can_manage_points), the full
+  `manage_point_request` approve/reject/counter/counter-back state machine
+  across all three permission paths, `edit_log_point`
+  (can_manage_points vs. can_manage_nm_points-only), `manage_points_creation`
+  (permission-guarded gracefully, directory handoff, ALL/PLEDGE_CLASS/SELECTED
+  target groups — its PLEDGE_CLASS branch is correct, unlike dues').
+  **Major finding**: `manage_point_request`'s `is_top2` check
+  (`request.user.position.can_manage_points and ...`) is evaluated
+  unconditionally and unguarded on *every* request to that view — so ANY
+  acting user without a Position row gets an `AttributeError` before
+  `is_approver`/`is_owner_countering` are even considered, even an assigned
+  approver just trying to approve their own request. This broke almost every
+  "happy path" test until `setUp` was fixed to give acting users a real
+  (permission-less) Position — a good reminder that `make_user()`'s default
+  `position=None` will trip this bug in any dashboard-workflow test unless
+  deliberately targeting it.
+- `test_views_dues_workflow.py` (21 tests): `dues_dashboard` (pins the
+  unguarded `position.can_manage_finance` crash), `manage_dues_creation`
+  (guarded permission check — though its own redirect target,
+  `dues_dashboard`, still crashes for that same positionless user, a
+  cascading instance of the bug), single/bulk charge creation across all
+  target groups, and the deliberately-left-broken `PLEDGE_CLASS` branch
+  (`assertRaises`, per the earlier bug-handling decision). `mark_paid` (pins
+  its own unguarded position crash, full/partial payment, non-
+  numeric/negative amount rejection).
+
+**Coverage-tool gotcha worth remembering**: `coverage.py` counts a physical
+*line* as covered, not each statement on it. One-line `elif X: Y` compounds
+(used throughout the bulk-target-group dispatch in this codebase) can show as
+"covered" merely because the condition was evaluated during some other
+branch's call, even when `Y` itself never ran. Don't fully trust a green
+line here — write the test for the actual target_group value if the branch
+matters, don't just chase the coverage number.
+
+Branch: `tests/phase-5-dashboard-workflows`, 2 commits, not yet merged —
+pending user check-in.
 
 ## Phase 6 — Stripe-integrated payment views — not started
 
@@ -201,18 +244,17 @@ tightly coupled to that app).
 
 ---
 
-## Current coverage snapshot (after Phase 3)
+## Current coverage snapshot (after Phase 5)
 
-`coverage run manage.py test && coverage report -m` (full suite, 104 tests):
+`coverage run manage.py test && coverage report -m` (full suite, 197 tests):
 
-- `homepage/`: **100%** across `models.py`, `forms.py`, `views.py`, `admin.py`.
-- `users/`: **100%** across `models.py`, `forms.py`, `views.py`, `urls.py`,
-  `admin.py`.
+- `homepage/`, `users/`: **100%** everywhere (unchanged since Phase 2).
 - `dashboard/`: `models.py`, `forms.py`, `admin.py`, `urls.py` all **100%**.
-  `views.py` at 16% (335/401 statements missing) — that's Phases 4-6, the
-  20-view file that's the bulk of remaining work.
-- `palamedes/settings.py` at 96% (missing the AWS S3 storage branch, only
-  exercised when `AWS_ACCESS_KEY_ID` is set — out of scope for now).
-- Project `TOTAL`: 60% (up from 52% after Phase 2). `dashboard/views.py`
-  (401 statements) is the single largest remaining gap — closing Phases
-  4-6 should push the project total well past 90%.
+  `views.py` at **83%** — every view except the Stripe-integrated payment
+  ones (`payment_page`, `create_bulk_checkout_session`, `process_payment`,
+  `payment_success`, `make_payment_treasurer`) is fully covered. That's all
+  that's left, and it's exactly Phase 6.
+- `palamedes/settings.py` at 96% (AWS S3 branch, out of scope), `urls.py` at
+  89% (DEBUG-only static route).
+- Project `TOTAL`: **92%** (up from 67% after Phase 4) — already past the
+  80% target from the original ask. Phase 6 should push this to ~98-100%.
