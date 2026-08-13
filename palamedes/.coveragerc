@@ -1,0 +1,22 @@
+[run]
+source =
+    homepage
+    dashboard
+    users
+    palamedes
+omit =
+    */migrations/*
+    manage.py
+    palamedes/wsgi.py
+    palamedes/asgi.py
+    palamedes/test_helpers.py
+    */tests/*
+    */tests.py
+
+[report]
+show_missing = True
+skip_covered = False
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
