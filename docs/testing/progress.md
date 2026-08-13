@@ -118,9 +118,37 @@ the PR is ready and let them merge it (UI or CLI) rather than retrying.**
 
 Branch: `tests/phase-2-users`, 4 commits, not yet merged — pending user check-in.
 
-## Phase 3 — `dashboard` models & simple forms — not started
+## Phase 3 — `dashboard` models & simple forms — **DONE**
 
-Stub files ready at `dashboard/tests/{test_models,test_forms}.py`.
+38 tests added. `dashboard/models.py` and `dashboard/forms.py` both at **100%**
+line coverage (`dashboard/admin.py` was already 100% — purely declarative).
+Full suite: 104 tests, all passing.
+
+- `test_models.py` (17 tests): `HousePoint` (`__str__`, status/date_for
+  defaults, negative amounts for penalties, `assigned_approver` SET_NULL),
+  `Due` (`__str__`, paid/template defaults, CASCADE-on-user-delete), `Task`
+  (`__str__`, completed default, mixed CASCADE/SET_NULL FKs), `Announcement`
+  (`__str__`, auto `date_posted`, CASCADE-on-chapter-delete).
+  **Hit a real Django/timezone gotcha here** — `HousePoint.date_for` has
+  `default=timezone.now` (a datetime-returning callable on a `DateField`), so
+  the in-memory attribute holds a raw datetime until it round-trips through
+  the DB; and comparing against `date.today()` (local system time) instead of
+  `timezone.now().date()` flaked because `TIME_ZONE='UTC'` in settings while
+  the test host's local clock is behind UTC. Fixed via `refresh_from_db()` +
+  comparing against `timezone.now().date()`. **Worth remembering for any
+  future date/time assertion in this codebase — always compare against UTC
+  clock sources, never local `date.today()`/`datetime.now()`.**
+- `test_forms.py` (21 tests): `NMPointRequestForm` (approver queryset scoped
+  to same-chapter Actives), `ActivePointRequestForm` (plain validation),
+  `DirectPointAssignmentForm` (can_manage_points-gated queryset, including the
+  `position=None` safe path), `SingleDueForm` (chapter-scoped queryset +
+  CHARGE/AID sign-forcing both directions), `BulkDueForm` (valid submission,
+  pinning that PLEDGE_CLASS's semester/year fields are NOT enforced by the
+  form itself — no `clean()` override, unlike BulkPointForm), `BulkPointForm`
+  (AWARD/PENALTY sign-forcing, `min_value=1`).
+
+Branch: `tests/phase-3-dashboard-core`, 2 commits, not yet merged — pending
+user check-in.
 
 ## Phase 4 — `dashboard` read-only/aggregation views — not started
 
@@ -143,17 +171,18 @@ tightly coupled to that app).
 
 ---
 
-## Current coverage snapshot (after Phase 2)
+## Current coverage snapshot (after Phase 3)
 
-`coverage run manage.py test && coverage report -m` (full suite, 66 tests):
+`coverage run manage.py test && coverage report -m` (full suite, 104 tests):
 
 - `homepage/`: **100%** across `models.py`, `forms.py`, `views.py`, `admin.py`.
 - `users/`: **100%** across `models.py`, `forms.py`, `views.py`, `urls.py`,
   `admin.py`.
-- `dashboard/`: unchanged from the Phase 0 baseline (module-level-only
-  coverage from imports, no real tests yet) — that's Phases 3-6.
+- `dashboard/`: `models.py`, `forms.py`, `admin.py`, `urls.py` all **100%**.
+  `views.py` at 16% (335/401 statements missing) — that's Phases 4-6, the
+  20-view file that's the bulk of remaining work.
 - `palamedes/settings.py` at 96% (missing the AWS S3 storage branch, only
   exercised when `AWS_ACCESS_KEY_ID` is set — out of scope for now).
-- Project `TOTAL`: 52% (up from 48% after Phase 1), still dominated by
-  dashboard having no tests yet — dashboard is roughly half the codebase by
-  line count (`dashboard/views.py` alone is 401 statements).
+- Project `TOTAL`: 60% (up from 52% after Phase 2). `dashboard/views.py`
+  (401 statements) is the single largest remaining gap — closing Phases
+  4-6 should push the project total well past 90%.
