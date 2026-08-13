@@ -150,10 +150,40 @@ Full suite: 104 tests, all passing.
 Branch: `tests/phase-3-dashboard-core`, 2 commits, not yet merged — pending
 user check-in.
 
-## Phase 4 — `dashboard` read-only/aggregation views — not started
+## Phase 4 — `dashboard` read-only/aggregation views — **DONE**
 
-Stub files ready: `test_views_dashboard.py`, `test_views_directory.py`,
-`test_views_points_hub.py`.
+41 tests added. `dashboard/views.py` up from 16% to **30%** line coverage
+(the 5 views this phase covers — `dashboard`, `directory`,
+`unpaid_directory`, `brother_profile`, `points_hub` — are now fully
+exercised; the remaining 70% is all Phase 5/6 territory). Full suite: 145
+tests, all passing.
+
+- `test_views_dashboard.py` (8 tests): login-required, approved-only
+  `total_points`, unpaid-only `dues_balance`, incomplete-only
+  `pending_tasks_count`, 5-most-recent chapter announcements (+ no-chapter
+  → `[]`), and pinning that `pending_points` is computed but never exposed
+  in context (dead code).
+- `test_views_directory.py` (15 tests): `directory` (chapter scoping, `q`
+  search across first/last/major/hometown, exact status filter),
+  `unpaid_directory` (only-unpaid-members listing, filter/status params),
+  `brother_profile` (404, cross-chapter denial, same-chapter render).
+  **Correction to codebase-notes.md**: the `unpaid_directory`
+  `Sum('dues__amount')` annotation was flagged as a suspected bug (summing
+  paid+unpaid together for a member with both). A dedicated test proved
+  this wrong — Django reuses the base filter's join for the annotation, so
+  `total_dues` correctly reflects only the unpaid amount. **Not a bug.**
+  Noted here so nobody "fixes" it later based on the stale note.
+- `test_views_points_hub.py` (18 tests): login-required, approved-only
+  `total_points`, `my_action_items` inbox (both OR branches), `exec_queue`
+  (empty without permission or with `position=None`, populated +
+  self-exclusion when permitted), leaderboard split (Coalesce keeps
+  zero-point members visible, correct ACT/NM split, descending order), and
+  the "mother logs" — digit-guarded recipient/approver filters, sort
+  allow-list (confirmed an injection-shaped sort value is safely ignored,
+  not just theoretically), NM/active log split.
+
+Branch: `tests/phase-4-dashboard-readviews`, 3 commits, not yet merged —
+pending user check-in.
 
 ## Phase 5 — `dashboard` workflow/mutation views — not started
 

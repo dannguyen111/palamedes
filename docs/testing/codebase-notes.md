@@ -563,13 +563,12 @@ straightforward form validation tests (required fields, valid email format).
 
 - **`unpaid_directory(request)`**: chapter members with at least one unpaid `Due`
   (`dues__is_paid=False`), `.distinct()`, annotated with `total_dues = Sum('dues__amount')`
-  — **note**: since the base filter already restricts to unpaid dues, but the `Sum`
-  annotation isn't filtered by `is_paid=False` specifically, if a member has some paid
-  and some unpaid dues, `total_dues` would sum **all** their dues rows (paid + unpaid)
-  because the annotation aggregates over the full joined `dues` relation shaped by the
-  `filter()`, not scoped separately — this is a subtle Django ORM gotcha (the filter()
-  call constrains the join used by the annotate) worth a dedicated test with a member
-  who has both paid and unpaid dues to confirm actual behavior. Optional `filter` GET
+  — **CORRECTED (was flagged as a suspected bug here, disproven by
+  `dashboard/tests/test_views_directory.py::UnpaidDirectoryViewTests::test_total_dues_annotation_sums_all_dues_not_just_unpaid`
+  in Phase 4)**: Django reuses the base filter's join for the `Sum` annotation, so
+  for a member with both a paid and an unpaid due, `total_dues` correctly reflects
+  only the unpaid amount — it does **not** sum paid+unpaid together. Not a bug;
+  don't "fix" this. Optional `filter` GET
   param (icontains on name/major/hometown) and `status` GET param (exact). Renders
   `dashboard/unpaid_directory.html`.
 
