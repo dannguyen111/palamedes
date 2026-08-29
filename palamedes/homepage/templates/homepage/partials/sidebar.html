@@ -1,0 +1,126 @@
+{% comment %}
+The signed-in navigation, in three zones: who you are, where you can
+go, and the utilities that close it. Icons trail their labels so they
+line up into a rail down the right edge.
+
+The Officer zone only renders for members whose position carries a
+manage permission, and each link inside it is gated on the specific
+flag that view checks — so the nav never offers a page that will turn
+you away. Hidden below 60rem, where tabbar.html takes over.
+
+`un` is the current url name padded with spaces, so it can be tested
+against a padded list of names. Substring matching on the bare name is
+what made `unpaid_directory` light up Dues, Directory and Who still
+owes all at once — it contains both "paid" and "directory".
+{% endcomment %}
+{% with url_name=request.resolver_match.url_name pos=user.position %}
+{% with un=" "|add:url_name|add:" " %}
+<aside class="sidebar">
+
+  <a class="sidebar__user" href="{% url 'profile' %}">
+    {% include "components/avatar.html" with member=user size="sm" %}
+    <div style="min-width:0">
+      <div class="sidebar__user-name">{{ user.get_full_name|default:user.username }}</div>
+      <div class="sidebar__user-meta">{{ user.chapter.name|default:"No chapter" }}</div>
+    </div>
+  </a>
+
+  <nav class="sidebar__group" aria-label="Main">
+    <p class="sidebar__label">Menu</p>
+
+    <a class="sidebar__link" href="{% url 'dashboard' %}"
+       {% if url_name == 'dashboard' %}aria-current="page"{% endif %}>
+      Dashboard
+      <svg class="icon" aria-hidden="true"><use href="#i-home"></use></svg>
+    </a>
+
+    <a class="sidebar__link" href="{% url 'points_hub' %}"
+       {% if un in " points_hub submit_points assign_points manage_point manage_points_creation edit_log_point " %}aria-current="page"{% endif %}>
+      Points
+      <svg class="icon" aria-hidden="true"><use href="#i-trophy"></use></svg>
+    </a>
+
+    <a class="sidebar__link" href="{% url 'dues_dashboard' %}"
+       {% if un in " dues_dashboard make_mark_paid mark_paid unpaid_directory brothers_due manage_dues_creation payment_success create_checkout_session create_bulk_checkout_session payment_page " %}aria-current="page"{% endif %}>
+      Dues
+      <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+    </a>
+
+    <a class="sidebar__link" href="{% url 'brother_directory' %}"
+       {% if un in " brother_directory brother_profile " %}aria-current="page"{% endif %}>
+      Directory
+      <svg class="icon" aria-hidden="true"><use href="#i-users"></use></svg>
+    </a>
+  </nav>
+
+  {% if pos.can_manage_points or pos.can_manage_nm_points or pos.can_manage_finance %}
+  <nav class="sidebar__group" aria-label="Officer">
+    <p class="sidebar__label">Officer</p>
+
+    {% if user.status != 'NM' or pos.can_manage_points %}
+    <a class="sidebar__link" href="{% url 'assign_points' %}"
+       {% if url_name == 'assign_points' %}aria-current="page"{% endif %}>
+      Award points
+      <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+    </a>
+    {% endif %}
+
+    {% if pos.can_manage_points %}
+    <a class="sidebar__link" href="{% url 'manage_points_creation' %}"
+       {% if url_name == 'manage_points_creation' %}aria-current="page"{% endif %}>
+      Award to a group
+      <svg class="icon" aria-hidden="true"><use href="#i-users"></use></svg>
+    </a>
+    {% endif %}
+
+    {% if pos.can_manage_finance %}
+    <a class="sidebar__link" href="{% url 'manage_dues_creation' %}"
+       {% if url_name == 'manage_dues_creation' %}aria-current="page"{% endif %}>
+      Assign dues
+      <svg class="icon" aria-hidden="true"><use href="#i-card"></use></svg>
+    </a>
+
+    <a class="sidebar__link" href="{% url 'unpaid_directory' %}"
+       {% if url_name == 'unpaid_directory' %}aria-current="page"{% endif %}>
+      Who still owes
+      <svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>
+    </a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  <div class="sidebar__spacer"></div>
+
+  <nav class="sidebar__group" aria-label="Account">
+    <a class="sidebar__link" href="{% url 'profile' %}"
+       {% if url_name == 'profile' %}aria-current="page"{% endif %}>
+      Profile
+      <svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg>
+    </a>
+
+    <button type="button" class="sidebar__link" data-theme-toggle aria-pressed="false"
+            aria-label="Switch to dark theme"
+            style="width:100%;background:none;border:0;cursor:pointer;text-align:left;font:inherit">
+      Theme
+      <svg class="icon icon--light-only" aria-hidden="true"><use href="#i-moon"></use></svg>
+      <svg class="icon icon--dark-only" aria-hidden="true"><use href="#i-sun"></use></svg>
+    </button>
+
+    <form action="{% url 'logout' %}" method="post">
+      {% csrf_token %}
+      <button type="submit" class="sidebar__link"
+              style="width:100%;background:none;border:0;cursor:pointer;text-align:left;font:inherit">
+        Log out
+        <svg class="icon" aria-hidden="true"><use href="#i-log-out"></use></svg>
+      </button>
+    </form>
+  </nav>
+
+  <a class="sidebar__brand" href="{% url 'dashboard' %}">
+    <svg class="brandmark" aria-hidden="true"><use href="#i-logo"></use></svg>
+    Palamedes
+  </a>
+
+</aside>
+{% endwith %}
+{% endwith %}

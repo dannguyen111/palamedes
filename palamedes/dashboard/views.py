@@ -38,6 +38,7 @@ def dashboard(request):
 
     context = {
         'total_points': total_points,
+        'pending_points': pending_points,
         'dues_balance': dues_balance,
         'pending_tasks_count': pending_tasks_count,
         'announcements': announcements
@@ -107,7 +108,7 @@ def manage_point_request(request, pk):
     
     # Security: Ensure user is allowed to modify this
     is_approver = point.assigned_approver == request.user
-    is_top2 = request.user.position.can_manage_points and point.assigned_approver is None
+    is_top2 = bool(request.user.position and request.user.position.can_manage_points) and point.assigned_approver is None
     is_owner_countering = point.submitted_by == request.user and point.status == 'COUNTERED'
 
     if not (is_approver or is_top2 or is_owner_countering):
@@ -221,10 +222,19 @@ def points_hub(request):
     nm_logs = base_logs.filter(user__status='NM')[:50]
     active_logs = base_logs.exclude(user__status='NM')[:50]
 
+    # Who may edit a logged amount, and how many items are waiting on this
+    # user. Both are derived, and the template can't express them without
+    # contorting itself, so they are computed here.
+    can_manage_points = bool(user.position and user.position.can_manage_points)
+    can_manage_nm_points = bool(user.position and user.position.can_manage_nm_points)
+
     context = {
         'total_points': total_points,
         'my_action_items': my_action_items,
         'exec_queue': exec_queue,
+        'queue_count': len(my_action_items) + len(exec_queue),
+        'can_edit_nm': can_manage_points or can_manage_nm_points,
+        'can_edit_act': can_manage_points,
         'active_leaderboard': active_leaderboard,
         'nm_leaderboard': nm_leaderboard,
         
@@ -245,7 +255,7 @@ def dues_dashboard(request):
     user = request.user
     
     # Security: Only People with Managing dues permission can see Treasurer View
-    is_treasurer = user.position.can_manage_finance
+    is_treasurer = bool(user.position and user.position.can_manage_finance)
     
     # My Personal Bill
     my_dues = Due.objects.filter(assigned_to=user, is_paid=False).order_by('due_date')
@@ -315,8 +325,9 @@ def manage_dues_creation(request):
 
     single_form = SingleDueForm(request.user)
     bulk_form = BulkDueForm()
-    # Default tab
-    active_tab = 'single'
+    # The tabs are links, so a GET picks the starting tab. POST handling
+    # below still overrides it (a bulk submit must come back on 'bulk').
+    active_tab = 'bulk' if request.GET.get('tab') == 'bulk' else 'single'
     if request.method == 'POST':
         single_form = SingleDueForm(request.user, request.POST)
         if 'submit_single' in request.POST:
@@ -525,7 +536,7 @@ def make_payment_treasurer(request, pk):
 def mark_paid(request, pk):
     due = get_object_or_404(Due, pk=pk)
     
-    if request.user.position.can_manage_finance:
+    if request.user.position and request.user.position.can_manage_finance:
         amount = request.POST.get('amount')
         if not amount:
             payment_amount = due.amount

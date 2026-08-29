@@ -1,0 +1,25 @@
+{% comment %}
+One status ladder for the whole app.
+
+Two colours and a hatch. Pending has no colour of its own — the diagonal
+hatch already means "not counted yet", which is exactly what pending is,
+so a third hue would be saying the same thing twice.
+
+    {% include "components/status_badge.html" with status=point.status %}
+    {% include "components/status_badge.html" with status="PAID" %}
+{% endcomment %}
+{% if status == 'APPROVED' %}
+  <span class="pill pill--good">Approved</span>
+{% elif status == 'PENDING' %}
+  <span class="pill pill--pending">Pending</span>
+{% elif status == 'REJECTED' %}
+  <span class="pill pill--bad">Rejected</span>
+{% elif status == 'COUNTERED' %}
+  <span class="pill pill--accent">Countered</span>
+{% elif status == 'PAID' %}
+  <span class="pill pill--good">Paid</span>
+{% elif status == 'UNPAID' %}
+  <span class="pill pill--pending">Unpaid</span>
+{% else %}
+  <span class="pill pill--neutral">{{ status|title }}</span>
+{% endif %}

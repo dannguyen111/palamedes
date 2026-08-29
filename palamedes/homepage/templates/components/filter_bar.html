@@ -1,0 +1,34 @@
+{% comment %}
+Search + status filter. Was byte-identical in directory.html and
+unpaid_directory.html apart from the query parameter name.
+
+    {% include "components/filter_bar.html" with name="q" value=search_query action=request.path %}
+
+name: the GET parameter the view reads ("q" in directory, "filter" in
+unpaid_directory).
+{% endcomment %}
+<form class="filter-bar" method="get" action="{{ action }}" role="search">
+  <label class="sr-only" for="filter-{{ name }}">Search members</label>
+  <input class="input"
+         id="filter-{{ name }}"
+         type="search"
+         name="{{ name }}"
+         value="{{ value }}"
+         placeholder="Search by name, major or hometown">
+
+  <label class="sr-only" for="filter-status">Member class</label>
+  <select class="select" id="filter-status" name="status">
+    <option value="">All members</option>
+    <option value="ACT" {% if request.GET.status == 'ACT' %}selected{% endif %}>Actives</option>
+    <option value="NM" {% if request.GET.status == 'NM' %}selected{% endif %}>New members</option>
+  </select>
+
+  <button type="submit" class="btn btn--outline">
+    <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+    Search
+  </button>
+
+  {% if value or request.GET.status %}
+    <a class="btn btn--quiet" href="{{ action }}">Clear</a>
+  {% endif %}
+</form>
