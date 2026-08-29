@@ -108,7 +108,7 @@ def manage_point_request(request, pk):
     
     # Security: Ensure user is allowed to modify this
     is_approver = point.assigned_approver == request.user
-    is_top2 = request.user.position.can_manage_points and point.assigned_approver is None
+    is_top2 = bool(request.user.position and request.user.position.can_manage_points) and point.assigned_approver is None
     is_owner_countering = point.submitted_by == request.user and point.status == 'COUNTERED'
 
     if not (is_approver or is_top2 or is_owner_countering):
@@ -255,7 +255,7 @@ def dues_dashboard(request):
     user = request.user
     
     # Security: Only People with Managing dues permission can see Treasurer View
-    is_treasurer = user.position.can_manage_finance
+    is_treasurer = bool(user.position and user.position.can_manage_finance)
     
     # My Personal Bill
     my_dues = Due.objects.filter(assigned_to=user, is_paid=False).order_by('due_date')
@@ -536,7 +536,7 @@ def make_payment_treasurer(request, pk):
 def mark_paid(request, pk):
     due = get_object_or_404(Due, pk=pk)
     
-    if request.user.position.can_manage_finance:
+    if request.user.position and request.user.position.can_manage_finance:
         amount = request.POST.get('amount')
         if not amount:
             payment_amount = due.amount
