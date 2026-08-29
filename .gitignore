@@ -214,3 +214,6 @@ __marimo__/
 media/profile_pics/
 
 .env
+
+# Personal backend work list (not for the repo)
+backend.md

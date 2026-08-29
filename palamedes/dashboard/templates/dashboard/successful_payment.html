@@ -1,67 +1,58 @@
 {% extends "homepage/base.html" %}
+
+{% block container_class %}container--narrow{% endblock %}
+{% block page_header %}{% endblock %}
+
 {% block content %}
-<div class="container mt-5 mb-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 text-center">
-            <div class="mb-4">
-                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-            </div>
-            <h2 class="text-success font-weight-bold mb-3">Payment Successful!</h2>
-            <p class="lead text-muted">Thank you. Your transaction has been completed.</p>
-            <div class="card shadow-sm mt-4 text-left">
-                <div class="card-header bg-light">
-                    <strong>Payment Receipt</strong>
-                </div>
-                <ul class="list-group list-group-flush">
-                    {% if dues %}
-                    {% for item in dues %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-0">{{ item.title }}</h6>
-                            <small class="text-muted">Paid in Full</small>
-                        </div>
-                        <span class="text-success font-weight-bold">${{ item.amount }}</span>
-                    </li>
-                    {% endfor %}
-                    {% elif due %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-0">{{ due.title }}</h6>
-                            <div class="mt-1">
-                                {% if due.is_paid %}
-                                <span class="badge badge-success">Paid in Full</span>
-                                {% else %}
-                                <span class="badge badge-warning text-white">Partial Payment</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <span class="text-success font-weight-bold">
-                            ${{ amount_paid|default:due.amount }}
-                        </span>
-                    </li>
-                    <div class="mt-2 text-right">
-                        <span class="badge badge-light border text-muted p-2">
-                            Remaining: <span class="text-dark font-weight-bold ml-1">${{ due.amount }}</span>
-                        </span>
-                    </div>
-                    {% else %}
-                    <li class="list-group-item text-danger">Receipt details unavailable.</li>
-                    {% endif %}
-                </ul>
-                <div class="card-footer text-muted small bg-white">
-                    Transaction For: <br>
-                    {% if due %}
-                    <span class="text-monospace">{{ due.title }}</span>
-                    {% endif %}
-                </div>
-            </div>
-            <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg mt-5 shadow-sm">
-                Return to Dashboard
-            </a>
+
+<div class="center stack" style="margin-bottom:var(--sp-6)">
+    <p class="eyebrow" style="color:var(--good)">Payment received</p>
+    <h1>That's paid</h1>
+    <p class="muted">Your balance is updated. A copy of the receipt is below.</p>
+</div>
+
+<div class="card">
+    <div class="card__header">
+        <h2 class="card__title">Receipt</h2>
+    </div>
+
+    <div class="rows" style="border-top:0">
+        {% if dues %}
+        {% for item in dues %}
+        <div class="row-item">
+            <span class="row-item__main">
+                <span class="row-item__title">{{ item.title }}</span>
+                <span class="row-item__meta">Paid in full</span>
+            </span>
+            <span class="row-item__value">${{ item.amount }}</span>
+            {% include "components/status_badge.html" with status="PAID" %}
         </div>
+        {% endfor %}
+
+        {% elif due %}
+        <div class="row-item">
+            <span class="row-item__main">
+                <span class="row-item__title">{{ due.title }}</span>
+                <span class="row-item__meta">
+                    {% if due.is_paid %}Paid in full{% else %}Part payment — ${{ due.amount }} still owing{% endif %}
+                </span>
+            </span>
+            <span class="row-item__value">${{ amount_paid|default:due.amount }}</span>
+            {% if due.is_paid %}
+            {% include "components/status_badge.html" with status="PAID" %}
+            {% else %}
+            {% include "components/status_badge.html" with status="PENDING" %}
+            {% endif %}
+        </div>
+
+        {% else %}
+        {% include "components/empty_state.html" with icon="i-info" title="Receipt unavailable" body="The payment went through, but we couldn't load its details. Your dues page will show the current balance." %}
+        {% endif %}
     </div>
 </div>
+
+<div class="center" style="margin-top:var(--sp-6)">
+    <a class="btn btn--primary btn--lg" href="{% url 'dues_dashboard' %}">Back to dues</a>
+</div>
+
 {% endblock %}

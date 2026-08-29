@@ -1,9 +1,17 @@
 {% extends "homepage/base.html" %}
 
+{% block container_class %}container--narrow{% endblock %}
+{% block page_header %}{% endblock %}
+
 {% block content %}
-<div class="alert alert-info text-center">
-    <h2>You have been logged out</h2>
-    <p>Thanks for stopping by.</p>
-    <a href="{% url 'login' %}" class="btn btn-outline-primary">Log In Again</a>
+
+<div class="card">
+    <div class="card__body">
+        {% include "components/empty_state.html" with icon="i-log-out" title="You're logged out" body="Your session is closed on this device." %}
+        <div class="center">
+            <a class="btn btn--primary" href="{% url 'login' %}">Log back in</a>
+        </div>
+    </div>
 </div>
+
 {% endblock %}

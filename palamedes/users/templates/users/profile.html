@@ -1,43 +1,61 @@
 {% extends "homepage/base.html" %}
-{% load crispy_forms_tags %}
+
+{% block page_header %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Your account</p>
+        <h1 class="page-header__title">Profile</h1>
+    </div>
+</header>
+{% endblock %}
 
 {% block content %}
-<div class="content-section">
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card shadow">
-                <div class="card-body text-center">
-                    <img class="rounded-circle account-img mb-3" src="{{ user.image.url }}"
-                        style="width: 150px; height: 150px; object-fit: cover;">
-                    <h4>{{ user.first_name }} {{ user.last_name }}</h4>
-                    <p class="text-secondary">{{ user.email }}</p>
-                    <hr>
-                    <div class="text-left">
-                        <p><strong>Status:</strong> {{ user.get_status_display }}</p>
-                        <p><strong>Position:</strong> {{ user.position.title }}</p>
-                        <p><strong>Chapter:</strong> {{ user.chapter.name }}</p>
-                        <p><strong>University:</strong> {{ user.chapter.university }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    Update Profile Info
-                </div>
-                <div class="card-body">
-                    <form method="POST" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {{ p_form|crispy }}
-                        <div class="form-group">
-                            <button class="btn btn-outline-primary" type="submit">Update</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+<div class="grid grid--split" style="align-items:start">
+
+    <div class="card">
+        <div class="card__header">
+            <h2 class="card__title">Your details</h2>
+        </div>
+        <div class="card__body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% include "components/form.html" with form=p_form %}
+                <button type="submit" class="btn btn--primary">Save changes</button>
+            </form>
         </div>
     </div>
+
+    <div class="card">
+        <div class="card__body center">
+            {% include "components/avatar.html" with member=user size="lg" %}
+            <h2 style="margin-top:var(--sp-4)">{{ user.first_name }} {{ user.last_name }}</h2>
+            <p class="muted small">{{ user.email }}</p>
+            <div class="cluster" style="justify-content:center;margin-top:var(--sp-3)">
+                <span class="pill pill--class">{{ user.get_status_display }}</span>
+                {% if user.position %}<span class="pill pill--neutral">{{ user.position.title }}</span>{% endif %}
+            </div>
+        </div>
+        <div class="card__footer">
+            <dl style="margin:0">
+                <div class="receipt-line">
+                    <dt>Chapter</dt>
+                    <dd>{{ user.chapter.name|default:"—" }}</dd>
+                </div>
+                <div class="receipt-line">
+                    <dt>University</dt>
+                    <dd>{{ user.chapter.university|default:"—" }}</dd>
+                </div>
+                <div class="receipt-line">
+                    <dt>Pledge class</dt>
+                    <dd>
+                        {% if user.pledge_semester %}{{ user.pledge_semester }} {{ user.pledge_year }}{% else %}—{% endif %}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+
 </div>
+
 {% endblock content %}

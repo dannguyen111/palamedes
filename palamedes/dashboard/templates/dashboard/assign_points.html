@@ -1,38 +1,42 @@
 {% extends "homepage/base.html" %}
-{% load crispy_forms_tags %}
 
-{% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'points_hub' %}">Points Hub</a></li>
-<li class="breadcrumb-item active" aria-current="page">Assign Points</li>
+{% block container_class %}container--mid{% endblock %}
+
+{% block page_header %}
+<header class="page-header">
+    <div>
+        <a class="page-header__back" href="{% url 'points_hub' %}">
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+            Points
+        </a>
+        <h1 class="page-header__title">Award points</h1>
+        <p class="muted small">Goes straight onto a new member's total — no review queue.</p>
+    </div>
+</header>
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow">
-            <div class="card-header bg-dark text-white">
-                <h4><i class="fas fa-bolt"></i> Assign Points Directly</h4>
-            </div>
-            <div class="card-body">
-                <p class="text-muted">
-                    As an Active/Exec, you can assign points (or deductions) directly to a New Member.
-                    These points are <strong>auto-approved</strong> and do not go through the review queue.
-                </p>
-                <hr>
-                <form method="POST">
-                    {% csrf_token %}
-                    {{ form|crispy }}
 
-                    <div class="alert alert-warning mt-3">
-                        <small><i class="fas fa-exclamation-triangle"></i> This action cannot be undone. The New Member
-                            will see these points immediately.</small>
-                    </div>
+<div class="card">
+    <div class="card__body">
+        <form method="post">
+            {% csrf_token %}
+            {% include "components/form.html" with form=form %}
 
-                    <button type="submit" class="btn btn-dark btn-block">Assign Points</button>
-                    <a href="{% url 'points_hub' %}" class="btn btn-outline-secondary btn-block">Cancel</a>
-                </form>
+            <div class="alert alert--warning" style="margin-bottom:var(--sp-5)">
+                <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+                <div class="alert__body">
+                    This applies immediately and can't be undone. The new member sees it
+                    straight away. Use a negative amount to deduct.
+                </div>
             </div>
-        </div>
+
+            <div class="cluster">
+                <button type="submit" class="btn btn--primary">Award points</button>
+                <a class="btn btn--quiet" href="{% url 'points_hub' %}">Cancel</a>
+            </div>
+        </form>
     </div>
 </div>
+
 {% endblock %}

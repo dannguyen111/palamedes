@@ -1,0 +1,212 @@
+/* ============================================================
+   Palamedes — Sigma Chi palette
+
+   Blue and old gold, over the top of tokens.css.
+
+   This file only REDEFINES; it never introduces a token that
+   tokens.css doesn't already carry, except the --gold family and
+   --brandmark-stroke, both of which are used only in the accent
+   rules at the bottom of this file. Everything else — type, space,
+   geometry, motion — still comes from tokens.css untouched.
+
+   To go back to the original royal blue, comment out the single
+   <link> to this file in homepage/base.html (and the favicon line
+   directly under it). Nothing else has to change.
+
+   How the two colours divide the work:
+
+     Blue does the structure. It is the primary action, the active
+     nav state, the filled card, the link. It is where royal blue
+     used to be, so every existing rule keeps working.
+
+     Gold is spent in four places and nowhere else: the tally in the
+     logo, the marker bar on the active nav item, the eyebrow above
+     a page title, and the settled portion of a meter. Gold is an
+     accent that marks progress and identity — it is deliberately
+     never a status colour, because approved/rejected stay green and
+     red, and "not counted yet" stays hatched.
+
+   A note on gold and contrast: old gold is a mid-tone. It cannot
+   carry small text on white — that is what --gold-ink is for, a
+   darkened gold that clears 7:1 on the light ground. Plain --gold
+   is only ever used for fills and non-text marks.
+   ============================================================ */
+
+:root {
+    /* ---- surfaces: a touch cooler than the original ---- */
+    --ground: #F4F6FA;
+    --surface: #FFFFFF;
+    --surface-2: #F8FAFD;
+    --surface-3: #EDF1F7;
+
+    /* ---- ink: navy-tinted rather than neutral ---- */
+    --ink: #0B1A2E;
+    --ink-muted: #5B6880;
+    --ink-faint: #909BB0;
+
+    /* ---- rules ---- */
+    --rule: #E3E8F1;
+    --rule-strong: #CFD7E5;
+
+    /* ---- Sigma Chi blue ----
+       Keeps the --royal-* names so the 1,400 lines of components.css
+       need no edit. The values are navy now, not royal. */
+    --royal-deep: #0B2148;   /* the single filled card */
+    --royal-700: #133463;
+    --royal: #1B4585;        /* primary actions, active nav */
+    --royal-400: #4C7AB8;
+    --royal-100: #D9E3F1;
+    --royal-50: #EEF2F9;
+    --on-royal: #FFFFFF;
+
+    /* ---- old gold ---- */
+    --gold: #C6A02C;         /* fills and marks only, never small text */
+    --gold-strong: #A8851C;
+    --gold-ink: #6B5210;     /* the text-safe gold, 7.4:1 on --ground */
+    --gold-wash: #FAF2D9;
+    --on-gold: #1B1405;
+
+    /* ---- status: unchanged in role, retuned to sit with navy ---- */
+    --good: #0E7A57;
+    --good-wash: #E2F3ED;
+    --bad: #B02A22;
+    --bad-wash: #FBEAE9;
+
+    --hatch-line: #C0C9DA;
+
+    --focus: #1B4585;
+
+    /* ---- shadow: navy-tinted ---- */
+    --shadow-sm: 0 1px 2px rgba(11, 26, 46, .05);
+    --shadow: 0 1px 3px rgba(11, 26, 46, .05), 0 8px 24px -12px rgba(11, 26, 46, .12);
+    --shadow-lg: 0 2px 6px rgba(11, 26, 46, .06), 0 24px 48px -20px rgba(11, 26, 46, .20);
+    --shadow-royal: 0 12px 28px -14px rgba(27, 69, 133, .55);
+
+    color-scheme: light;
+}
+
+/* ---------- dark: system preference, unless explicitly set light ---------- */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --ground: #080D18;
+        --surface: #101827;
+        --surface-2: #151E30;
+        --surface-3: #1C2739;
+
+        --ink: #E8ECF4;
+        --ink-muted: #96A2B8;
+        --ink-faint: #6A7590;
+
+        --rule: #202B40;
+        --rule-strong: #2D3A52;
+
+        --royal-deep: #0B2148;
+        --royal-700: #205089;
+        --royal: #4076BE;
+        --royal-400: #7FA6D8;
+        --royal-100: #16304F;
+        --royal-50: #101E31;
+        --on-royal: #FFFFFF;
+
+        /* Gold lifts on a dark ground, and can carry text there. */
+        --gold: #D8B54A;
+        --gold-strong: #E3C468;
+        --gold-ink: #DFC260;
+        --gold-wash: #29220F;
+        --on-gold: #1B1405;
+
+        --good: #3FBE90;
+        --good-wash: #0F2A22;
+        --bad: #E0736B;
+        --bad-wash: #2B1614;
+
+        --hatch-line: #313B52;
+
+        --focus: #7FA6D8;
+
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+        --shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+        --shadow-lg: 0 2px 6px rgba(0, 0, 0, .45), 0 24px 48px -20px rgba(0, 0, 0, .8);
+        --shadow-royal: 0 12px 28px -14px rgba(0, 0, 0, .8);
+
+        color-scheme: dark;
+    }
+}
+
+/* ---------- dark: explicit choice wins in both directions ---------- */
+:root[data-theme="dark"] {
+    --ground: #080D18;
+    --surface: #101827;
+    --surface-2: #151E30;
+    --surface-3: #1C2739;
+
+    --ink: #E8ECF4;
+    --ink-muted: #96A2B8;
+    --ink-faint: #6A7590;
+
+    --rule: #202B40;
+    --rule-strong: #2D3A52;
+
+    --royal-deep: #0B2148;
+    --royal-700: #205089;
+    --royal: #4076BE;
+    --royal-400: #7FA6D8;
+    --royal-100: #16304F;
+    --royal-50: #101E31;
+    --on-royal: #FFFFFF;
+
+    --gold: #D8B54A;
+    --gold-strong: #E3C468;
+    --gold-ink: #DFC260;
+    --gold-wash: #29220F;
+    --on-gold: #1B1405;
+
+    --good: #3FBE90;
+    --good-wash: #0F2A22;
+    --bad: #E0736B;
+    --bad-wash: #2B1614;
+
+    --hatch-line: #313B52;
+
+    --focus: #7FA6D8;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+    --shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+    --shadow-lg: 0 2px 6px rgba(0, 0, 0, .45), 0 24px 48px -20px rgba(0, 0, 0, .8);
+    --shadow-royal: 0 12px 28px -14px rgba(0, 0, 0, .8);
+
+    color-scheme: dark;
+}
+
+/* ============================================================
+   The four places gold is spent
+   ============================================================ */
+
+/* 1. The tally in the logo. The symbol in icon_sprite.html draws its
+      strokes with var(--brandmark-stroke, #FFFFFF), so setting the
+      property here turns them gold, and removing this file returns
+      them to white with no edit to the sprite. */
+.brandmark { --brandmark-stroke: var(--gold); }
+
+/* 2. The marker bar on the active nav item. The item's tint and text
+      stay blue; only the bar is gold, so the accent reads as a
+      position marker rather than a second state colour. */
+.sidebar__link[aria-current="page"]::before { background: var(--gold); }
+
+/* 3. The eyebrow above a page title — the one piece of running text
+      allowed to be gold, and only in the darkened text-safe value. */
+.eyebrow { color: var(--gold-ink); }
+
+/* 4. The settled portion of the meter on the filled feature card,
+      where the original used white because navy on navy is invisible.
+      Gold here means counted; hatching still carries "not counted
+      yet", which is the whole subject of the product. Meters on light
+      cards stay blue — gold has too little contrast on white.
+
+      The :not() matters. Without it this rule also lands on the
+      hatched key, and the background shorthand wipes out the stripes
+      it inherits from components.css. */
+.stat--feature .meter__fill,
+.widget--feature .meter__fill { background: var(--gold); }
+.stat--feature .meter__swatch:not(.meter__swatch--hatch),
+.widget--feature .meter__swatch:not(.meter__swatch--hatch) { background: var(--gold); }

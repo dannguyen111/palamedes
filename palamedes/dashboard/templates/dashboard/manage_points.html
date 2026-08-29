@@ -1,63 +1,59 @@
 {% extends "homepage/base.html" %}
-{% load crispy_forms_tags %}
 
-{% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'points_hub' %}">Points Hub</a></li>
-<li class="breadcrumb-item active" aria-current="page">Mass Assign Points</li>
+{% block container_class %}container--mid{% endblock %}
+
+{% block page_header %}
+<header class="page-header">
+    <div>
+        <a class="page-header__back" href="{% url 'points_hub' %}">
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+            Points
+        </a>
+        <h1 class="page-header__title">Award points to a group</h1>
+        <p class="muted small">Applies the same amount to everyone matching your selection.</p>
+    </div>
+</header>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="text-secondary">
-                <a href="{% url 'dashboard' %}" class="text-secondary"><i class="fas fa-arrow-left"></i></a>
-                Mass Point Assignment
-            </h2>
-        </div>
-    </div>
 
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h5 class="m-0"><i class="fas fa-tasks"></i> Bulk Award / Deduct</h5>
-        </div>
-        <div class="card-body">
-            <form method="POST">
-                {% csrf_token %}
-                <input type="hidden" name="submit_bulk_points" value="1">
+<div class="card">
+    <div class="card__body">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="submit_bulk_points" value="1">
+            {{ form.selected_user_ids }}
 
-                {{ form.selected_user_ids }}
+            <fieldset class="choice-group" style="margin-bottom:var(--sp-5)">
+                <legend>Award or deduct</legend>
+                {{ form.type }}
+            </fieldset>
 
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <div class="p-3 bg-light rounded border">
-                            <label class="font-weight-bold">Action Type:</label>
-                            {{ form.type }}
-                        </div>
-                    </div>
-                </div>
+            <div class="field-row">
+                {% include "components/field.html" with field=form.target_group %}
+                {% include "components/field.html" with field=form.amount %}
+                {% include "components/field.html" with field=form.description %}
+                {% include "components/field.html" with field=form.date_for %}
+            </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        {{ form.target_group|as_crispy_field }}
-                        {{ form.amount|as_crispy_field }}
-                    </div>
-                    <div class="col-md-6">
-                        {{ form.description|as_crispy_field }}
-                        {{ form.date_for|as_crispy_field }}
-                    </div>
-                </div>
+            <hr>
 
-                <hr>
-                <h6 class="text-secondary">Optional Filters</h6>
-                <div class="row">
-                    <div class="col-md-6">{{ form.pledge_semester|as_crispy_field }}</div>
-                    <div class="col-md-6">{{ form.pledge_year|as_crispy_field }}</div>
-                </div>
+            <p class="eyebrow" style="margin-bottom:var(--sp-3)">Narrow it down (optional)</p>
+            <p class="small muted" style="margin-bottom:var(--sp-4)">
+                Only needed if you picked a specific pledge class above.
+            </p>
 
-                <button type="submit" class="btn btn-primary btn-block btn-lg mt-3">Process Points</button>
-            </form>
-        </div>
+            <div class="field-row">
+                {% include "components/field.html" with field=form.pledge_semester %}
+                {% include "components/field.html" with field=form.pledge_year %}
+            </div>
+
+            <div class="cluster">
+                <button type="submit" class="btn btn--primary btn--lg">Award points</button>
+                <a class="btn btn--quiet" href="{% url 'points_hub' %}">Cancel</a>
+            </div>
+        </form>
     </div>
 </div>
+
 {% endblock %}

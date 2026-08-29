@@ -1,0 +1,111 @@
+{% comment %}
+The point log table. Was two near-identical 120-line blocks in
+points_hub.html (new members / actives); now one partial called twice.
+
+    {% include "dashboard/partials/log_table.html" with logs=nm_logs can_edit=can_edit_nm noun="new member" %}
+
+Column headers double as controls: Recipient and Approver open filter
+menus, Amount and Date sort. Every one of them preserves the other two
+parameters so filters and sort compose instead of clobbering each other.
+{% endcomment %}
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>
+          <div class="dropdown">
+            <button type="button" class="dropdown__toggle" data-dropdown-toggle
+                    aria-expanded="false" aria-controls="recipient-menu-{{ noun|slugify }}">
+              Recipient
+              <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+            </button>
+            <div class="dropdown__menu" id="recipient-menu-{{ noun|slugify }}" hidden>
+              <a class="dropdown__item" {% if not current_recipient %}aria-current="true"{% endif %}
+                 href="?recipient=&approver={{ current_approver|default_if_none:'' }}&sort={{ current_sort }}">All recipients</a>
+              {% for m in chapter_members %}
+              <a class="dropdown__item" {% if current_recipient == m.id %}aria-current="true"{% endif %}
+                 href="?recipient={{ m.id }}&approver={{ current_approver|default_if_none:'' }}&sort={{ current_sort }}">
+                {{ m.first_name }} {{ m.last_name }}
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+        </th>
+
+        <th>
+          <div class="dropdown">
+            <button type="button" class="dropdown__toggle" data-dropdown-toggle
+                    aria-expanded="false" aria-controls="approver-menu-{{ noun|slugify }}">
+              Approver
+              <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+            </button>
+            <div class="dropdown__menu" id="approver-menu-{{ noun|slugify }}" hidden>
+              <a class="dropdown__item" {% if not current_approver %}aria-current="true"{% endif %}
+                 href="?approver=&recipient={{ current_recipient|default_if_none:'' }}&sort={{ current_sort }}">All approvers</a>
+              {% for m in approvers_list %}
+              <a class="dropdown__item" {% if current_approver == m.id %}aria-current="true"{% endif %}
+                 href="?approver={{ m.id }}&recipient={{ current_recipient|default_if_none:'' }}&sort={{ current_sort }}">
+                {{ m.first_name }} {{ m.last_name }}
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+        </th>
+
+        <th>Description</th>
+
+        <th class="table__num">
+          <a href="?sort={% if current_sort == 'amount' %}-amount{% else %}amount{% endif %}&recipient={{ current_recipient|default_if_none:'' }}&approver={{ current_approver|default_if_none:'' }}"
+             style="color:inherit;text-decoration:none">Amount</a>
+        </th>
+
+        <th>Status</th>
+
+        <th>
+          <a href="?sort={% if current_sort == 'date_submitted' %}-date_submitted{% else %}date_submitted{% endif %}&recipient={{ current_recipient|default_if_none:'' }}&approver={{ current_approver|default_if_none:'' }}"
+             style="color:inherit;text-decoration:none">Date</a>
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for point in logs %}
+      <tr {% if point.user == user %}class="is-you"{% endif %}>
+        <td>
+          {% if point.user == user %}You{% else %}{{ point.user.first_name }} {{ point.user.last_name }}{% endif %}
+        </td>
+        <td>
+          {% if point.assigned_approver %}
+            {% if point.assigned_approver == user %}You{% else %}{{ point.assigned_approver.first_name }} {{ point.assigned_approver.last_name }}{% endif %}
+          {% else %}
+            <span class="faint">Unassigned</span>
+          {% endif %}
+        </td>
+        <td>{{ point.description|truncatechars:40 }}</td>
+        <td class="table__num">
+          <span class="tnum" style="font-weight:700">{{ point.amount }}</span>
+          {% if can_edit %}
+          {# One dialog serves every row: the trigger carries the values. #}
+          <button type="button" class="btn btn--icon btn--quiet btn--sm"
+                  data-dialog-open="edit-point"
+                  data-dialog-action="{% url 'edit_log_point' point.id %}"
+                  data-field-amount="{{ point.amount }}"
+                  data-field-member="{{ point.user.first_name }} {{ point.user.last_name }}"
+                  aria-label="Edit points for {{ point.user.first_name }} {{ point.user.last_name }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg>
+          </button>
+          {% endif %}
+        </td>
+        <td>{% include "components/status_badge.html" with status=point.status %}</td>
+        <td class="nowrap">{{ point.date_submitted|date:"j M" }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6">
+          {% include "components/empty_state.html" with icon="i-file" title="No records" body="Nothing logged for this group yet." %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

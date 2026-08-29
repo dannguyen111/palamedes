@@ -1,0 +1,34 @@
+{% comment %}
+The sidebar's mobile form. Members live on their phones, and a hamburger
+buries the four things they actually open.
+
+Active state is matched against a padded list of url names, the same way
+sidebar.html does it, so a name like `unpaid_directory` lights exactly
+one tab rather than every tab whose fragment it happens to contain.
+{% endcomment %}
+{% with url_name=request.resolver_match.url_name %}
+{% with un=" "|add:url_name|add:" " %}
+<nav class="tabbar" aria-label="Sections">
+  <a class="tabbar__link" href="{% url 'dashboard' %}"
+     {% if url_name == 'dashboard' %}aria-current="page"{% endif %}>
+    <svg class="icon" aria-hidden="true"><use href="#i-home"></use></svg>
+    Dashboard
+  </a>
+  <a class="tabbar__link" href="{% url 'points_hub' %}"
+     {% if un in " points_hub submit_points assign_points manage_point manage_points_creation edit_log_point " %}aria-current="page"{% endif %}>
+    <svg class="icon" aria-hidden="true"><use href="#i-trophy"></use></svg>
+    Points
+  </a>
+  <a class="tabbar__link" href="{% url 'dues_dashboard' %}"
+     {% if un in " dues_dashboard make_mark_paid mark_paid unpaid_directory brothers_due manage_dues_creation payment_success create_checkout_session create_bulk_checkout_session payment_page " %}aria-current="page"{% endif %}>
+    <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+    Dues
+  </a>
+  <a class="tabbar__link" href="{% url 'brother_directory' %}"
+     {% if un in " brother_directory brother_profile " %}aria-current="page"{% endif %}>
+    <svg class="icon" aria-hidden="true"><use href="#i-users"></use></svg>
+    Directory
+  </a>
+</nav>
+{% endwith %}
+{% endwith %}

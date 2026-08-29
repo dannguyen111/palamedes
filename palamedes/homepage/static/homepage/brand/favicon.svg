@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!--
+    The tab icon. Same tally, same geometry, same weight as brand/mark.svg
+    and the #i-logo symbol — the only thing this file adds is the tile
+    lightening on a dark tab strip, which is the same swap --royal makes
+    in tokens.css. Keep the paths identical to the other two.
+  -->
+  <style>
+    .tile { fill: #2547CE; }
+    @media (prefers-color-scheme: dark) { .tile { fill: #4468EA; } }
+  </style>
+  <rect class="tile" width="32" height="32" rx="8"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round">
+    <path d="M9.5 7.8v16.4M13.85 7.8v16.4M18.2 7.8v16.4M22.55 7.8v16.4"/>
+    <path d="M7.9 22.2 24.1 9.8"/>
+  </g>
+</svg>

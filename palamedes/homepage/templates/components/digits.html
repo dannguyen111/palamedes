@@ -1,0 +1,8 @@
+{% comment %}
+A headline figure. Kept as a partial so every big number on every screen
+gets the same weight, tracking and tabular figures.
+
+    {% include "components/digits.html" with value=total_points label="House points" %}
+    {% include "components/digits.html" with value=total_due|floatformat:2 prefix="$" label="Balance due" %}
+{% endcomment %}
+<p class="stat__value">{{ prefix|default:"" }}{{ value }}</p>
