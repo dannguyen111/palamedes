@@ -1,0 +1,25 @@
+{% comment %}
+Renders a whole form's fields. Replaces {{ form|crispy }}.
+
+    <form method="post">{% csrf_token %}
+      {% include "components/form.html" with form=form %}
+      <button type="submit" class="btn btn--primary">Save changes</button>
+    </form>
+
+Fields only — the <form> tag, CSRF token and submit button stay at the
+call site, so each page names its own action in its own words.
+{% endcomment %}
+{% if form.non_field_errors %}
+  <div class="alert alert--error" role="alert">
+    <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+    <div class="alert__body">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  </div>
+{% endif %}
+
+{% for field in form.hidden_fields %}{{ field }}{% endfor %}
+
+{% for field in form.visible_fields %}
+  {% include "components/field.html" with field=field %}
+{% endfor %}

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!--
+    Sigma Chi cut of the tab icon: same tally, same geometry, same
+    weight as brand/favicon.svg — blue tile, old gold marks.
+
+    Paired with css/sigma-chi.css. Comment that stylesheet out in
+    base.html and switch this line back to brand/favicon.svg to
+    return to the original royal blue and white.
+  -->
+  <style>
+    .tile { fill: #1B4585; }
+    .tally { stroke: #D9B94F; }
+    @media (prefers-color-scheme: dark) {
+      .tile { fill: #4076BE; }
+      .tally { stroke: #F0DA9A; }
+    }
+  </style>
+  <rect class="tile" width="32" height="32" rx="8"/>
+  <g class="tally" fill="none" stroke-width="3.4" stroke-linecap="round">
+    <path d="M9.5 7.8v16.4M13.85 7.8v16.4M18.2 7.8v16.4M22.55 7.8v16.4"/>
+    <path d="M7.9 22.2 24.1 9.8"/>
+  </g>
+</svg>

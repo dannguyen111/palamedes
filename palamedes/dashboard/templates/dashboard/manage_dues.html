@@ -1,116 +1,104 @@
 {% extends "homepage/base.html" %}
-{% load crispy_forms_tags %}
 
-{% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'dues_dashboard' %}">Financials Hub</a></li>
-<li class="breadcrumb-item active" aria-current="page">Manage Dues</li>
+{% block page_header %}
+<header class="page-header">
+    <div>
+        <a class="page-header__back" href="{% url 'dues_dashboard' %}">
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+            Dues
+        </a>
+        <h1 class="page-header__title">Assign dues</h1>
+        <p class="muted small">Charge one member, or bill a whole group at once.</p>
+    </div>
+</header>
 {% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2 class="text-secondary">
-            <a href="{% url 'dues_dashboard' %}" class="text-secondary"><i class="fas fa-arrow-left"></i></a>
-            Treasurer Console
-        </h2>
-        <p class="text-muted">Issue charges, assign scholarships, or create mass bills.</p>
-    </div>
+
+{% comment %}
+These tabs are driven by the server (active_tab), so they are links, not
+scripted tab controls — the form state has to survive the round trip.
+{% endcomment %}
+<div class="tabs">
+    <a class="tab {% if active_tab != 'bulk' %}is-active{% endif %}" href="?tab=single">One member</a>
+    <a class="tab {% if active_tab == 'bulk' %}is-active{% endif %}" href="?tab=bulk">A group</a>
 </div>
 
-<div class="card shadow">
-    <div class="card-header">
-        <ul class="nav nav-tabs card-header-tabs" id="duesTabs" role="tablist">
-            <li class="nav-item">
-                <a class="nav-link {% if active_tab == 'single' %}active{% endif %}" id="single-tab" data-toggle="tab" href="#single" role="tab">
-                    <i class="fas fa-user"></i> Single Transaction
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if active_tab == 'bulk' %}active{% endif %}" id="bulk-tab" data-toggle="tab" href="#bulk" role="tab">
-                    <i class="fas fa-users"></i> Bulk / Mass Charge
-                </a>
-            </li>
-        </ul>
-    </div>
+{% if active_tab == 'bulk' %}
 
-    <div class="card-body">
-        <div class="tab-content" id="duesTabsContent">
-
-            <div class="tab-pane fade {% if active_tab == 'single' %}show active{% endif %}" id="single" role="tabpanel">
-                <h5 class="text-primary mb-3">Individual Charge or Scholarship</h5>
-                <form method="POST">
-                    {% csrf_token %}
-                    <input type="hidden" name="submit_single" value="1">
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            {{ single_form.title|as_crispy_field }}
-                            {{ single_form.assigned_to|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6">
-                            {{ single_form.amount|as_crispy_field }}
-                            {{ single_form.due_date|as_crispy_field }}
-                        </div>
-                    </div>
-
-                    <div class="row mt-3">
-                        <div class="col-md-12 p-3 bg-light rounded border">
-                            <label><strong>Transaction Type:</strong></label>
-                            {{ single_form.type }}
-                            <small class="text-muted d-block mt-2">
-                                * "Charge" will create a debt (Positive amount).<br>
-                                * "Scholarship/Aid" will create a credit (Negative amount) that reduces their total
-                                balance.
-                            </small>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-block mt-4">Create Transaction</button>
-                </form>
+<div class="card" style="border-top-left-radius:0;border-top-right-radius:0;border-top:0">
+    <div class="card__body">
+        <div class="alert alert--warning" style="margin-bottom:var(--sp-5)">
+            <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+            <div class="alert__body">
+                This creates a charge for every member matching your selection. Check the
+                group and amount before you send it.
             </div>
-
-            <div class="tab-pane fade {% if active_tab == 'bulk' %}show active{% endif %}" id="bulk" role="tabpanel">
-                <h5 class="text-danger mb-3">Mass Assignment</h5>
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i> This will create a charge for <strong>multiple
-                        people</strong> at once. Use with caution.
-                </div>
-
-                <form method="POST">
-                    {% csrf_token %}
-                    <input type="hidden" name="submit_bulk" value="1">
-
-                    {{ bulk_form.selected_user_ids }}
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            {{ bulk_form.title|as_crispy_field }}
-                            {{ bulk_form.target_group|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6">
-                            {{ bulk_form.amount|as_crispy_field }}
-                            {{ bulk_form.due_date|as_crispy_field }}
-                        </div>
-                    </div>
-
-                    <hr>
-                    <h6 class="text-secondary">Pledge Class Filter (Optional)</h6>
-                    <p class="small text-muted">Only fill this out if you selected "Specific Pledge Class" above.</p>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            {{ bulk_form.pledge_semester|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6">
-                            {{ bulk_form.pledge_year|as_crispy_field }}
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-danger btn-block mt-4">Execute Mass Charge</button>
-                </form>
-            </div>
-
         </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="submit_bulk" value="1">
+            {{ bulk_form.selected_user_ids }}
+
+            <div class="field-row">
+                {% include "components/field.html" with field=bulk_form.title %}
+                {% include "components/field.html" with field=bulk_form.target_group %}
+                {% include "components/field.html" with field=bulk_form.amount %}
+                {% include "components/field.html" with field=bulk_form.due_date %}
+            </div>
+
+            <hr>
+
+            <p class="eyebrow" style="margin-bottom:var(--sp-3)">Pledge class filter (optional)</p>
+            <p class="small muted" style="margin-bottom:var(--sp-4)">
+                Only needed if you chose a specific pledge class above.
+            </p>
+
+            <div class="field-row">
+                {% include "components/field.html" with field=bulk_form.pledge_semester %}
+                {% include "components/field.html" with field=bulk_form.pledge_year %}
+            </div>
+
+            <div class="cluster">
+                <button type="submit" class="btn btn--primary btn--lg">Charge the group</button>
+                <a class="btn btn--quiet" href="{% url 'dues_dashboard' %}">Cancel</a>
+            </div>
+        </form>
     </div>
 </div>
+
+{% else %}
+
+<div class="card" style="border-top-left-radius:0;border-top-right-radius:0;border-top:0">
+    <div class="card__body">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="submit_single" value="1">
+
+            <div class="field-row">
+                {% include "components/field.html" with field=single_form.title %}
+                {% include "components/field.html" with field=single_form.assigned_to %}
+                {% include "components/field.html" with field=single_form.amount %}
+                {% include "components/field.html" with field=single_form.due_date %}
+            </div>
+
+            <fieldset class="choice-group" style="margin-bottom:var(--sp-5)">
+                <legend>Charge or credit</legend>
+                {{ single_form.type }}
+                <p class="field__help" style="margin-top:var(--sp-3)">
+                    A charge adds to what they owe. A scholarship or aid credit reduces it.
+                </p>
+            </fieldset>
+
+            <div class="cluster">
+                <button type="submit" class="btn btn--primary btn--lg">Create the charge</button>
+                <a class="btn btn--quiet" href="{% url 'dues_dashboard' %}">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endif %}
+
 {% endblock %}

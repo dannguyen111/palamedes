@@ -1,26 +1,33 @@
 {% extends "homepage/base.html" %}
-{% load crispy_forms_tags %}
 
-{% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'points_hub' %}">Points Hub</a></li>
-<li class="breadcrumb-item active" aria-current="page">Submit Point Request</li>
+{% block container_class %}container--mid{% endblock %}
+
+{% block page_header %}
+<header class="page-header">
+    <div>
+        <a class="page-header__back" href="{% url 'points_hub' %}">
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+            Points
+        </a>
+        <h1 class="page-header__title">Request points</h1>
+        <p class="muted small">An approver reviews this before it counts towards your total.</p>
+    </div>
+</header>
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h4>Submit Point Request</h4>
+
+<div class="card">
+    <div class="card__body">
+        <form method="post">
+            {% csrf_token %}
+            {% include "components/form.html" with form=form %}
+            <div class="cluster">
+                <button type="submit" class="btn btn--primary">Send request</button>
+                <a class="btn btn--quiet" href="{% url 'points_hub' %}">Cancel</a>
             </div>
-            <div class="card-body">
-                <form method="POST">
-                    {% csrf_token %}
-                    {{ form|crispy }}
-                    <button type="submit" class="btn btn-primary btn-block">Submit Request</button>
-                </form>
-            </div>
-        </div>
+        </form>
     </div>
 </div>
+
 {% endblock %}

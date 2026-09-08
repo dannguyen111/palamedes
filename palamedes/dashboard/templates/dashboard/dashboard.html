@@ -1,129 +1,195 @@
 {% extends "homepage/base.html" %}
 
+{% comment %}
+The dashboard opens by saying where you stand, in a sentence, rather
+than by naming itself. The figures are marks inside that sentence:
+gold for counted, hatched for waiting on an officer, blue for owed.
+Everything below is a widget carrying one fact, so the sentence does
+the summarising and the grid does the detail.
+{% endcomment %}
+
+{% block page_header %}
+<header class="opener">
+    <h1 class="opener__greeting">Welcome back, {{ user.first_name|default:user.username }}.</h1>
+
+    {% comment %}
+    Marks are kept away from the punctuation that ends a clause — an
+    inline-block's side padding leaves a full stop stranded, and the
+    sentence reads better this way in any case.
+    {% endcomment %}
+    <p class="opener__standing">
+        You're holding
+        <a class="mark mark--counted" href="{% url 'points_hub' %}">{{ total_points }} point{{ total_points|pluralize }}</a>{% if pending_points %},
+        with <span class="mark mark--pending">{{ pending_points }}</span>
+        still waiting on an officer{% endif %}{% if dues_balance > 0 %},
+        and <a class="mark mark--owed" href="{% url 'dues_dashboard' %}">${{ dues_balance|floatformat:2 }}</a>
+        outstanding on your dues{% endif %}.
+
+        {% if not pending_points and dues_balance <= 0 %}
+        Nothing is waiting, and your dues are clear.
+        {% endif %}
+    </p>
+</header>
+
+{# Every screen states where you stand, then offers what you can do about it. #}
+<div class="actionbar">
+    <span class="actionbar__label">Quick actions</span>
+    <a class="btn btn--primary btn--sm" href="{% url 'submit_points' %}">
+        <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+        Request points
+    </a>
+    <a class="btn btn--outline btn--sm" href="{% url 'dues_dashboard' %}">Pay dues</a>
+    {% if user.status != 'NM' or user.position.can_manage_points %}
+    <a class="btn btn--outline btn--sm" href="{% url 'assign_points' %}">Award points</a>
+    {% endif %}
+    <a class="btn btn--outline btn--sm" href="{% url 'brother_directory' %}">Directory</a>
+</div>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2 class="text-secondary">
-            Dashboard
-            {% if user.chapter %}
-            <small class="text-muted" style="font-size: 0.6em;">{{ user.chapter.name }}</small>
+
+<section class="bento">
+
+    {# The one filled widget on the screen: the number this page exists to answer. #}
+    <a class="widget widget--feature span-5" href="{% url 'points_hub' %}">
+        <div class="widget__head">
+            <span class="widget__label">
+                <svg class="icon" aria-hidden="true"><use href="#i-trophy"></use></svg>
+                House points
+            </span>
+            <span class="widget__link" style="color:rgba(255,255,255,.72)">
+                Open
+                <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right"></use></svg>
+            </span>
+        </div>
+
+        <p class="widget__value">{{ total_points }}</p>
+
+        {% if pending_points %}
+        <div>
+            <div class="meter">
+                <div class="meter__fill" style="width:{% widthratio total_points total_points|add:pending_points 100 %}%"></div>
+            </div>
+            <div class="meter__legend">
+                <span class="meter__key"><span class="meter__swatch"></span>{{ total_points }} approved</span>
+                <span class="meter__key"><span class="meter__swatch meter__swatch--hatch"></span>{{ pending_points }} waiting</span>
+            </div>
+        </div>
+        {% else %}
+        <p class="widget__foot"><span class="chip">0</span> Nothing waiting on approval</p>
+        {% endif %}
+    </a>
+
+    <a class="widget span-4" href="{% url 'dues_dashboard' %}">
+        <div class="widget__head">
+            <span class="widget__label">
+                <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+                Dues balance
+            </span>
+            <span class="widget__link">
+                Pay
+                <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right"></use></svg>
+            </span>
+        </div>
+
+        <p class="widget__value">${{ dues_balance|floatformat:2 }}</p>
+
+        <p class="widget__foot">
+            {% if dues_balance > 0 %}
+            <span class="chip chip--hatch">Due</span> Payment outstanding
+            {% else %}
+            <span class="chip chip--good">Clear</span> Paid in full
             {% endif %}
-        </h2>
+        </p>
+    </a>
+
+    <div class="widget span-3">
+        <div class="widget__head">
+            <span class="widget__label">
+                <svg class="icon" aria-hidden="true"><use href="#i-clipboard"></use></svg>
+                Open tasks
+            </span>
+        </div>
+
+        <p class="widget__value">{{ pending_tasks_count }}</p>
+
+        <p class="widget__foot">
+            {% if pending_tasks_count %}
+            <span class="chip">{{ pending_tasks_count }}</span> Assigned to you
+            {% else %}
+            <span class="chip chip--good">Clear</span> Nothing outstanding
+            {% endif %}
+        </p>
     </div>
-</div>
 
-<div class="row mb-5">
-    <div class="col-md-4">
-        <div class="card shadow-sm border-left-primary h-100 py-2">
-            <div class="card-body">
-                <div>
-                    <a href="{% url 'points_hub' %}" class="stretched-link"></a>
-                </div>
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">House Points</div>
-                        <div class="h3 mb-0 font-weight-bold text-gray-800">{{ total_points }}</div>
+    <section class="widget widget--rows span-8">
+        <div class="widget__head">
+            <span class="widget__label">
+                <svg class="icon" aria-hidden="true"><use href="#i-megaphone"></use></svg>
+                Announcements
+            </span>
+            {% if announcements %}
+            <span class="count">{{ announcements|length }}</span>
+            {% endif %}
+        </div>
 
-                        {% if pending_points > 0 %}
-                        <div class="mt-1 text-muted small">
-                            <i class="fas fa-clock"></i> {{ pending_points }} Pending
-                        </div>
-                        {% endif %}
+        {% if announcements %}
+        <div class="rows">
+            {% for post in announcements %}
+            <article class="row-item">
+                <span class="row-item__main">
+                    <span class="row-item__title">{{ post.title }}</span>
+                    <span class="row-item__meta">
+                        {{ post.author.first_name }} {{ post.author.last_name }} · {{ post.date_posted|date:"j M Y" }}
+                    </span>
+                    <span class="row-item__body">{{ post.content }}</span>
+                </span>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        {% include "components/empty_state.html" with icon="i-megaphone" title="No announcements" body="When an officer posts to the chapter, it lands here." %}
+        {% endif %}
+    </section>
 
-                    </div>
-                    <div class="col-auto">
-                        <span style="font-size: 2em;">🏆</span>
-                    </div>
-                </div>
+    {# Facts that belong together but aren't the headline. #}
+    <section class="widget span-4">
+        <div class="widget__head">
+            <span class="widget__label">
+                <svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg>
+                Your standing
+            </span>
+        </div>
+
+        <div class="inset-grid">
+            <div class="inset">
+                <p class="inset__key">Class</p>
+                <p class="inset__value">{{ user.get_status_display }}</p>
+            </div>
+            <div class="inset">
+                <p class="inset__key">Position</p>
+                <p class="inset__value">{{ user.position.title|default:"Member" }}</p>
+            </div>
+            <div class="inset">
+                <p class="inset__key">Pledge class</p>
+                <p class="inset__value">
+                    {% if user.pledge_semester %}{{ user.pledge_semester }} {{ user.pledge_year }}{% else %}—{% endif %}
+                </p>
+            </div>
+            <div class="inset">
+                <p class="inset__key">Chapter</p>
+                <p class="inset__value">{{ user.chapter.name|default:"—" }}</p>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-4">
-        <div class="card shadow-sm border-left-danger h-100 py-2">
-            <div class="card-body">
-                <div>
-                    <a href="{% url 'dues_dashboard' %}" class="stretched-link"></a>
-                </div>
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Dues Balance</div>
-                        <div class="h3 mb-0 font-weight-bold text-gray-800">${{ dues_balance }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <span style="font-size: 2em;">💰</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+        <p class="widget__foot">
+            <a class="widget__link" href="{% url 'profile' %}">
+                Edit profile
+                <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right"></use></svg>
+            </a>
+        </p>
+    </section>
 
-    <div class="col-md-4">
-        <div class="card shadow-sm border-left-warning h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Tasks</div>
-                        <div class="h3 mb-0 font-weight-bold text-gray-800">{{ pending_tasks_count }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <span style="font-size: 2em;">📋</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+</section>
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 bg-white">
-                <h6 class="m-0 font-weight-bold text-primary">Chapter Announcements</h6>
-            </div>
-            <div class="card-body">
-                {% if announcements %}
-                {% for post in announcements %}
-                <div class="mb-4">
-                    <h5>{{ post.title }}</h5>
-                    <p class="text-muted small">
-                        Posted by {{ post.author.first_name }} on {{ post.date_posted|date:"F d, Y" }}
-                    </p>
-                    <p>{{ post.content }}</p>
-                    <hr>
-                </div>
-                {% endfor %}
-                {% else %}
-                <p class="text-muted text-center">No announcements yet.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 bg-white">
-                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
-            </div>
-            <div class="card-body">
-
-                <a href="{% url 'points_hub' %}" class="btn btn-primary btn-lg btn-block mb-3"
-                    style="height: 60px; line-height: 45px;">
-                    <i class="fas fa-trophy mr-2"></i> House Points System
-                </a>
-
-                <hr>
-
-                <a href="{% url 'dues_dashboard' %}" class="btn btn-success btn-block mb-3">
-                    <i class="fas fa-money-bill-wave"></i> Finances & Dues
-                </a>
-
-                <a href="{% url 'brother_directory' %}" class="btn btn-info btn-block">
-                    <i class="fas fa-users"></i> Brother Directory
-                </a>
-
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

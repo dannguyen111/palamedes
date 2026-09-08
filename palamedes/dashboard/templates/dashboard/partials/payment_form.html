@@ -1,0 +1,30 @@
+{% comment %}
+The pay-in-full / pay-part-of-it pair. payment_page.html (member pays by
+card) and paid_treasurer.html (treasurer records a payment) were ~90%
+identical; this is the part they shared.
+
+    {% include "dashboard/partials/payment_form.html" with action=... field="due_amount" max=due.amount %}
+
+field  — the amount input's name, which differs between the two flows
+max    — the largest payment the form will accept
+{% endcomment %}
+<form action="{{ action }}" method="post">
+  {% csrf_token %}
+  <input type="hidden" name="{{ field }}" value="{{ max }}">
+  <button type="submit" class="btn btn--primary btn--block btn--lg">
+    Pay the full ${{ max }}
+  </button>
+</form>
+
+<p class="divider-or">or</p>
+
+<form action="{{ action }}" method="post">
+  {% csrf_token %}
+  <div class="field">
+    <label class="field__label" for="custom-amount">Pay a different amount</label>
+    <input class="input" type="number" id="custom-amount" name="{{ field }}"
+           placeholder="0.00" step="0.01" min="1.00" max="{{ max }}" required>
+    <p class="field__help">Anything up to ${{ max }}. The rest stays on the account.</p>
+  </div>
+  <button type="submit" class="btn btn--outline btn--block btn--lg">Pay that amount</button>
+</form>

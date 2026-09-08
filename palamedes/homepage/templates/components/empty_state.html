@@ -1,0 +1,12 @@
+{% comment %}
+An empty screen is an invitation to act, not a shrug. Every caller
+passes a title that says what is missing and a body that says what to
+do about it.
+
+    {% include "components/empty_state.html" with icon="i-trophy" title="No points yet" body="Submit your first point request and it will show up here." %}
+{% endcomment %}
+<div class="empty">
+  <svg class="icon" aria-hidden="true"><use href="#{{ icon|default:'i-info' }}"></use></svg>
+  <p class="empty__title">{{ title }}</p>
+  {% if body %}<p class="empty__body">{{ body }}</p>{% endif %}
+</div>

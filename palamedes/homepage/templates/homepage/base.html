@@ -1,123 +1,144 @@
-{% load static %}
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css"
-        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" href="{% static 'homepage/main.css' %}">
-    {% if title %}
-    <title>Palamedes - {{ title }}</title>
-    {% else %}
-    <title>Palamedes</title>
-    {% endif %}
+    <meta name="color-scheme" content="light dark">
 
-    <link rel="icon" type="image/png" href="{% static 'homepage/logo-without-text.PNG' %}?v=2">
+    <title>{% if title %}{{ title }} · Palamedes{% else %}Palamedes{% endif %}</title>
+
+    {# Stamp the theme before first paint so there is no flash. #}
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem("palamedes-theme");
+                if (t === "dark" || t === "light") {
+                    document.documentElement.setAttribute("data-theme", t);
+                }
+            } catch (e) { }
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+
+    <link rel="stylesheet" href="{% static 'homepage/css/tokens.css' %}">
+    <link rel="stylesheet" href="{% static 'homepage/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'homepage/css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'homepage/css/motion.css' %}">
+
+    {% comment %}
+    ---- Palette ------------------------------------------------------
+    Sigma Chi blue and old gold. sigma-chi.css loads last and only
+    redefines colour tokens, so the original royal blue is still intact
+    underneath in tokens.css.
+
+    To go back to the original design, comment out these two lines and
+    uncomment the two below them. Nothing else has to change.
+    {% endcomment %}
+    <link rel="stylesheet" href="{% static 'homepage/css/sigma-chi.css' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'homepage/brand/favicon-sigma-chi.svg' %}?v=6">
+
+    {# <link rel="icon" type="image/svg+xml" href="{% static 'homepage/brand/favicon.svg' %}?v=6"> #}
+
+    <script src="{% static 'homepage/js/app.js' %}" defer></script>
+    <script src="{% static 'homepage/js/motion.js' %}" defer></script>
+
+    {% block extra_head %}{% endblock %}
 </head>
 
-<body class="d-flex flex-column min-vh-100">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 sticky-top shadow-sm">
-        <div class="container">
-            <a class="navbar-brand" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}">
-                <img src="{% static 'homepage/logo-without-text.PNG' %}?v=2" width="30" height="30" class="d-inline-block align-top" alt=""> Palamedes
-            </a>
+<body>
+    {% include "homepage/partials/icon_sprite.html" %}
 
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false"
-                aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+    <a class="skip-link" href="#main">Skip to content</a>
 
-            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-                <div class="navbar-nav mr-auto">
-                    {% if user.is_authenticated %}
-                    <a class="nav-item nav-link" href="{% url 'dashboard' %}">Dashboard</a>
-                    {% else %}
-                    <a class="nav-item nav-link" href="{% url 'home' %}">Home</a>
-                    {% endif %}
+    {% comment %}
+    One shell. Signed in it grows a sidebar; signed out it collapses to a
+    single column with a plain top bar.
+    {% endcomment %}
+    <div class="app{% if not user.is_authenticated %} app--plain{% endif %}">
 
-                    <a class="nav-item nav-link" href="{% url 'about' %}">About</a>
-                </div>
+        {% if user.is_authenticated %}
+        {% include "homepage/partials/sidebar.html" %}
+        {% endif %}
 
-                <div class="navbar-nav align-items-center">
-                    {% if user.is_authenticated %}
-                    <a class="nav-item nav-link" href="{% url 'profile' %}">
-                        Profile
+        <div class="app__body">
+
+            {% if not user.is_authenticated %}
+            <header class="topbar">
+                <div class="container topbar__inner">
+                    <a class="topbar__brand" href="{% url 'home' %}">
+                        <svg class="brandmark" aria-hidden="true"><use href="#i-logo"></use></svg>
+                        Palamedes
                     </a>
-                    <form action="{% url 'logout' %}" method="post" class="m-0 p-0">
-                        {% csrf_token %}
-                        <button type="submit" class="nav-item nav-link bg-transparent border-0">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </button>
-                    </form>
-                    {% else %}
-                    <a class="nav-item nav-link" href="{% url 'login' %}">Login</a>
-                    <a class="nav-item nav-link" href="{% url 'register' %}">Register</a>
-                    {% endif %}
+
+                    <button type="button" class="btn btn--icon btn--quiet" data-theme-toggle aria-pressed="false"
+                        aria-label="Switch to dark theme" title="Switch to dark theme">
+                        <svg class="icon icon--light-only" aria-hidden="true"><use href="#i-moon"></use></svg>
+                        <svg class="icon icon--dark-only" aria-hidden="true"><use href="#i-sun"></use></svg>
+                    </button>
+                    <a class="topbar__link" href="{% url 'about' %}">About</a>
+                    <a class="topbar__link" href="{% url 'login' %}">Log in</a>
+                    <a class="btn btn--primary btn--sm" href="{% url 'register' %}">Create account</a>
                 </div>
-            </div>
-        </div>
-    </nav>
+            </header>
+            {% endif %}
 
-    <main role="main" class="container">
+            <main class="main {% block container_class %}{% endblock %}" id="main">
 
-        <div class="row mb-3 align-items-center">
-            <div class="col-8 col-md-9">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb bg-transparent p-0 m-0">
-                        {% if user.is_authenticated and '/dashboard/' in request.path and request.resolver_match.url_name != 'dashboard' %}
-                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        {% endif %}
-
-                        {% block breadcrumb %}{% endblock %}
-                    </ol>
-                </nav>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-12">
                 {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm">
-                    {{ message }}
-                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <div class="stack--tight" style="margin-bottom:var(--sp-5)">
+                    {% for message in messages %}
+                    <div class="alert alert--{{ message.tags|default:'info' }}" role="alert" data-autodismiss>
+                        <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
+                        <div class="alert__body">{{ message }}</div>
+                        <button type="button" class="alert__close" data-dismiss aria-label="Dismiss">&times;</button>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
                 {% endif %}
 
+                {% block page_header %}
+                {% if title %}
+                <header class="page-header">
+                    <div>
+                        {% block page_back %}{% endblock %}
+                        <h1 class="page-header__title">{% block page_title %}{{ title }}{% endblock %}</h1>
+                        {% block page_subtitle %}{% endblock %}
+                    </div>
+                    <div class="page-header__actions">{% block page_actions %}{% endblock %}</div>
+                </header>
+                {% endif %}
+                {% endblock %}
+
                 {% block content %}{% endblock %}
-            </div>
-        </div>
-    </main>
+            </main>
 
-    <footer class="footer mt-auto py-4 bg-light border-top">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6 mb-3 mb-md-0">
-                    <h5 class="text-primary font-weight-bold"><i class="bi bi-shield-shaded"></i> Palamedes</h5>
-                    <small class="text-muted">Streamlining Fraternity Management.</small>
-                    <p class="text-muted small mt-2">&copy; {% now "Y" %} Palamedes. Designed by Dan Nguyen and Rajwat
-                        Singh.</p>
+            <footer class="footer">
+                <div class="footer__inner" style="padding-inline:var(--sp-6)">
+                    <div>
+                        <p class="footer__brand">Palamedes</p>
+                        <p>&copy; {% now "Y" %} · Built by Dan Nguyen and Rajwat Singh</p>
+                    </div>
+                    <nav class="footer__links" aria-label="Footer">
+                        {% if not user.is_authenticated %}<a href="{% url 'home' %}">Home</a>{% endif %}
+                        <a href="{% url 'about' %}">About</a>
+                        <a href="{% url 'start_chapter' %}">Start a chapter</a>
+                    </nav>
                 </div>
-                <div class="col-md-6 text-md-right">
-                    <a href="{% url 'home' %}" class="text-muted mr-3">Home</a>
-                    <a href="{% url 'about' %}" class="text-muted mr-3">About</a>
-                    <a href="{% url 'start_chapter' %}" class="text-muted mr-3">Start a Chapter</a>
-                </div>
-            </div>
+            </footer>
         </div>
-    </footer>
+    </div>
 
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
-        crossorigin="anonymous"></script>
+    {% if user.is_authenticated %}
+    {% include "homepage/partials/tabbar.html" %}
+    {% endif %}
 
+    <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+
+    {% block extra_js %}{% endblock %}
 </body>
 
 </html>

@@ -1,0 +1,40 @@
+{% comment %}
+Renders one bound form field. Replaces {{ field|as_crispy_field }}.
+
+    {% include "components/field.html" with field=form.amount %}
+
+Three shapes: a single checkbox (control before label), a radio group
+(fieldset + legend), and everything else (label above control).
+{% endcomment %}
+{% if field.field.widget.input_type == 'checkbox' %}
+
+  <div class="field{% if field.errors %} field--invalid{% endif %}">
+    <label class="check" for="{{ field.id_for_label }}">
+      {{ field }}
+      <span class="check__text">{{ field.label }}</span>
+    </label>
+    {% if field.help_text %}<p class="field__help">{{ field.help_text|safe }}</p>{% endif %}
+    {% for error in field.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+  </div>
+
+{% elif field.field.widget.input_type == 'radio' %}
+
+  <fieldset class="field choice-group{% if field.errors %} field--invalid{% endif %}">
+    <legend>{{ field.label }}{% if field.field.required %} <span class="field__required">*</span>{% endif %}</legend>
+    {{ field }}
+    {% if field.help_text %}<p class="field__help">{{ field.help_text|safe }}</p>{% endif %}
+    {% for error in field.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+  </fieldset>
+
+{% else %}
+
+  <div class="field{% if field.errors %} field--invalid{% endif %}">
+    <label class="field__label" for="{{ field.id_for_label }}">
+      {{ field.label }}{% if field.field.required %} <span class="field__required" aria-hidden="true">*</span>{% endif %}
+    </label>
+    {{ field }}
+    {% if field.help_text %}<p class="field__help">{{ field.help_text|safe }}</p>{% endif %}
+    {% for error in field.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+  </div>
+
+{% endif %}

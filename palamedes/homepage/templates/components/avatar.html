@@ -1,0 +1,19 @@
+{% comment %}
+Replaces ~12 inline width/height/object-fit declarations that were set
+at five different pixel values across the old templates.
+
+    {% include "components/avatar.html" with member=brother size="lg" %}
+
+size: (default) | sm | md | lg | xl
+{% endcomment %}
+{% if member.image %}
+  <img class="avatar{% if size %} avatar--{{ size }}{% endif %}"
+       src="{{ member.image.url }}"
+       alt="{{ member.get_full_name|default:member.username }}"
+       loading="lazy"
+       width="120" height="120">
+{% else %}
+  <span class="avatar avatar--initials{% if size %} avatar--{{ size }}{% endif %}" aria-hidden="true">
+    {{ member.first_name|slice:":1" }}{{ member.last_name|slice:":1" }}
+  </span>
+{% endif %}

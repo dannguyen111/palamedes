@@ -1,0 +1,205 @@
+/* ============================================================
+   Palamedes — motion
+
+   The moving layer over the quiet system. Everything here is a
+   progressive enhancement wired up by motion.js: with JS off the
+   page renders exactly as before, and base.css already clamps
+   every duration under prefers-reduced-motion, so this file can
+   assume motion is welcome.
+
+   The one bold moment is the headline wave — display type lifts
+   and turns gold under the pointer. Everything else stays small:
+   a reveal, a count-up, a nudge.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. Reveal — the page-load and scroll orchestration
+   ------------------------------------------------------------
+   motion.js stamps .rv on the targets it chooses, then .rv--in
+   when they enter the viewport, staggered per group. The
+   transition lives on the --in state so the initial stamp never
+   animates in from nowhere.
+   ------------------------------------------------------------ */
+
+.rv {
+    opacity: 0;
+    transform: translateY(14px);
+}
+
+.rv--in {
+    opacity: 1;
+    transform: none;
+    transition:
+        opacity 640ms var(--ease),
+        transform 640ms var(--ease);
+    transition-delay: var(--rv-delay, 0ms);
+}
+
+/* ------------------------------------------------------------
+   2. The headline wave — the signature
+   ------------------------------------------------------------
+   motion.js splits .display-xl into words and characters. Words
+   never break internally, so the split can't change line
+   wrapping. Characters carry the transition; motion.js drives
+   transform and color from pointer distance.
+   ------------------------------------------------------------ */
+
+.display-xl .word {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.display-xl .char {
+    display: inline-block;
+    transition:
+        transform 320ms var(--ease),
+        color 240ms var(--ease);
+}
+
+/* ------------------------------------------------------------
+   3. Meters fill in, values count up
+   ------------------------------------------------------------ */
+
+.meter__fill--anim {
+    transition: width 950ms cubic-bezier(.22, .8, .3, 1);
+}
+
+/* ------------------------------------------------------------
+   4. Buttons — magnetic pull (JS) + shine sweep (CSS)
+   ------------------------------------------------------------ */
+
+@media (hover: hover) and (pointer: fine) {
+
+    .btn--primary {
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* A soft light band that sweeps across once per hover. */
+    .btn--primary::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -75%;
+        width: 50%;
+        background: linear-gradient(
+            100deg,
+            transparent,
+            rgba(255, 255, 255, .28),
+            transparent
+        );
+        transform: skewX(-18deg);
+        transition: none;
+        pointer-events: none;
+    }
+
+    .btn--primary:hover::after {
+        left: 125%;
+        transition: left 650ms var(--ease);
+    }
+}
+
+/* ------------------------------------------------------------
+   5. Card spotlight
+   ------------------------------------------------------------
+   A faint pool of brand light that follows the pointer across a
+   card. motion.js feeds --mx/--my; the gradient does the rest.
+   Kept at a whisper — it should read as sheen, not effect.
+   ------------------------------------------------------------ */
+
+@media (hover: hover) and (pointer: fine) {
+
+    .stat,
+    .widget,
+    .card,
+    .member-card {
+        position: relative;
+    }
+
+    .stat::after,
+    .widget::after,
+    .card::after,
+    .member-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 350ms var(--ease);
+        background: radial-gradient(
+            240px circle at var(--mx, 50%) var(--my, 50%),
+            color-mix(in srgb, var(--royal) 8%, transparent),
+            transparent 65%
+        );
+    }
+
+    .stat:hover::after,
+    .widget:hover::after,
+    .card:hover::after,
+    .member-card:hover::after {
+        opacity: 1;
+    }
+
+    /* On the filled navy card, brand-blue light is invisible —
+       the pool is white there, like a sheen on lacquer. */
+    .stat--feature::after,
+    .widget--feature::after {
+        background: radial-gradient(
+            240px circle at var(--mx, 50%) var(--my, 50%),
+            rgba(255, 255, 255, .10),
+            transparent 65%
+        );
+    }
+}
+
+/* ------------------------------------------------------------
+   6. Micro-interactions on things already interactive
+   ------------------------------------------------------------ */
+
+/* Feature icons rise to meet the reader. */
+.feature__icon {
+    transition:
+        transform 240ms var(--ease),
+        background 240ms var(--ease),
+        color 240ms var(--ease);
+}
+
+.feature:hover .feature__icon,
+.grid > div:hover > .feature__icon {
+    transform: translateY(-3px) rotate(-3deg);
+}
+
+/* Sidebar nav: the trailing icon slides toward its rail. */
+.sidebar__link .icon {
+    transition: transform 200ms var(--ease), color var(--fast) var(--ease);
+}
+
+.sidebar__link:hover .icon {
+    transform: translateX(2px);
+}
+
+/* The theme toggle tips its hat. */
+.btn--icon .icon {
+    transition: transform var(--slow) var(--ease);
+}
+
+.btn--icon:hover .icon {
+    transform: rotate(-16deg) scale(1.08);
+}
+
+/* Footer links: an underline that draws itself. */
+.footer__links a {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0% 1px;
+    transition:
+        background-size 260ms var(--ease),
+        color var(--fast) var(--ease);
+}
+
+.footer__links a:hover {
+    background-size: 100% 1px;
+}

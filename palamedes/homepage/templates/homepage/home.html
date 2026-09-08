@@ -1,25 +1,87 @@
 {% extends "homepage/base.html" %}
-{% block content %}
-<div class="jumbotron text-center bg-white border shadow-sm">
-    <h1 class="display-4">Palamedes</h1>
-    <p class="lead">The Fraternity Management System.</p>
-    <hr class="my-4">
-    <p>Manage your chapter's points, dues, and tasks without the expensive fees.</p>
-    <a class="btn btn-primary btn-lg" href="{% url 'start_chapter' %}" role="button">Start Your Chapter</a>
-</div>
 
-<div class="row text-center mt-5">
-    <div class="col-md-4">
-        <h3>🏆 House Points</h3>
-        <p>Track participation with ease. Custom leaderboards for Actives and New Members.</p>
+{% block page_header %}{% endblock %}
+
+{% block content %}
+
+{% comment %}
+The hero shows the product itself: a chapter's cards exactly as they appear
+once you're inside, hatching and all. Sample figures, labelled as such.
+{% endcomment %}
+<section class="hero">
+    <div class="grid grid--split" style="align-items:center;gap:var(--sp-7)">
+        <div class="stack">
+            <p class="eyebrow">Chapter management</p>
+            <h1 class="display-xl">Every point and every&nbsp;dollar, in one place.</h1>
+            <p class="lead" style="max-width:40ch">
+                Palamedes replaces the spreadsheets, group chats, and payment apps a
+                chapter accumulates. No licence fee.
+            </p>
+            <div class="cluster">
+                <a class="btn btn--primary btn--lg" href="{% url 'start_chapter' %}">Start your chapter</a>
+                <a class="btn btn--outline btn--lg" href="{% url 'about' %}">What's inside</a>
+            </div>
+        </div>
+
+        <div class="stack--tight" style="display:grid;gap:var(--sp-4)">
+            <div class="stat stat--feature">
+                <div class="stat__head">
+                    <p class="stat__label">House points</p>
+                    <span class="chip">Sample</span>
+                </div>
+                <p class="stat__value">142</p>
+                <div style="margin-top:var(--sp-5)">
+                    <div class="meter"><div class="meter__fill" style="width:78%"></div></div>
+                    <div class="meter__legend">
+                        <span class="meter__key"><span class="meter__swatch"></span>142 approved</span>
+                        <span class="meter__key"><span class="meter__swatch meter__swatch--hatch"></span>40 waiting</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+                <div class="stat">
+                    <div class="stat__head"><p class="stat__label">Dues</p></div>
+                    <p class="stat__value" style="font-size:var(--step-3)">$0.00</p>
+                    <p class="stat__foot"><span class="chip chip--good">Clear</span></p>
+                </div>
+                <div class="stat">
+                    <div class="stat__head"><p class="stat__label">Tasks</p></div>
+                    <p class="stat__value" style="font-size:var(--step-3)">2</p>
+                    <p class="stat__foot"><span class="chip">Open</span></p>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="col-md-4">
-        <h3>💰 Dues Ledger</h3>
-        <p>Assign dues, track payments, and maintain transparency with a simple financial ledger.</p>
+</section>
+
+<section style="margin-top:var(--sp-8)">
+    <div class="grid grid--3">
+        <div>
+            <svg class="icon feature__icon" aria-hidden="true"><use href="#i-trophy"></use></svg>
+            <h2 class="feature__title">House points</h2>
+            <p class="feature__body">
+                Members submit, officers approve or counter. Separate standings for
+                actives and new members, and a full log of who awarded what.
+            </p>
+        </div>
+        <div>
+            <svg class="icon feature__icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+            <h2 class="feature__title">Dues</h2>
+            <p class="feature__body">
+                Charge one member or bill the whole chapter, take card payments, and
+                see at a glance who still owes what.
+            </p>
+        </div>
+        <div>
+            <svg class="icon feature__icon" aria-hidden="true"><use href="#i-clipboard"></use></svg>
+            <h2 class="feature__title">Duties</h2>
+            <p class="feature__body">
+                Hand out jobs with deadlines, post announcements the whole chapter
+                sees, and keep the roster current.
+            </p>
+        </div>
     </div>
-    <div class="col-md-4">
-        <h3>✅ Task Manager</h3>
-        <p>Assign duties, set deadlines, and ensure your chapter operations run smoothly.</p>
-    </div>
-</div>
+</section>
+
 {% endblock content %}

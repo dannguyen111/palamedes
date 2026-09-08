@@ -1,0 +1,180 @@
+/* ============================================================
+   Palamedes — design tokens
+
+   Quiet, rounded, royal blue. One saturated colour carries the
+   brand; everything else is neutral. Status is told with small
+   tinted pills and with hatching, not with a spread of hues.
+
+   Every colour is defined on bare :root. The dark blocks only
+   REDEFINE — nothing gets its sole definition inside a media
+   query or a [data-theme] block.
+   ============================================================ */
+
+:root {
+    /* ---- surfaces ---- */
+    --ground: #F4F6FB;
+    --surface: #FFFFFF;
+    --surface-2: #F8FAFD;
+    --surface-3: #EFF2F8;
+
+    /* ---- ink ---- */
+    --ink: #0E1628;
+    --ink-muted: #626C85;
+    --ink-faint: #98A1B6;
+
+    /* ---- rules ---- */
+    --rule: #E7EAF3;
+    --rule-strong: #D5DAE7;
+
+    /* ---- the one brand colour ---- */
+    --royal-deep: #16246B;   /* the single filled card */
+    --royal-700: #1D34A0;
+    --royal: #2547CE;        /* primary actions, active nav */
+    --royal-400: #5C7BEC;
+    --royal-100: #DEE5FD;
+    --royal-50: #EFF3FE;
+    --on-royal: #FFFFFF;
+
+    /* ---- status: two colours and a hatch, nothing more ---- */
+    --good: #0E7A57;
+    --good-wash: #E3F4EE;
+    --bad: #B02A22;
+    --bad-wash: #FBEAE9;
+
+    /* Hatching means "not counted yet" — pending points, unpaid
+       dues. It replaces a third status colour entirely. */
+    --hatch-line: #C3CADB;
+
+    /* ---- focus ---- */
+    --focus: #2547CE;
+
+    /* ---- shadow: soft and low, never a hard edge ---- */
+    --shadow-sm: 0 1px 2px rgba(14, 22, 40, .04);
+    --shadow: 0 1px 3px rgba(14, 22, 40, .04), 0 8px 24px -12px rgba(14, 22, 40, .10);
+    --shadow-lg: 0 2px 6px rgba(14, 22, 40, .05), 0 24px 48px -20px rgba(14, 22, 40, .18);
+    --shadow-royal: 0 12px 28px -14px rgba(37, 71, 206, .55);
+
+    /* ============ type ============
+       One family. Contrast comes from weight and scale, not from
+       a second face. */
+    --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    --step--2: 0.75rem;
+    --step--1: 0.8125rem;
+    --step-0: 0.9375rem;
+    --step-1: 1.0625rem;
+    --step-2: 1.25rem;
+    --step-3: 1.625rem;
+    --step-4: 2.25rem;
+    --step-5: 3rem;
+    --step-6: 4rem;
+
+    /* ============ space ============ */
+    --sp-1: 0.25rem;
+    --sp-2: 0.5rem;
+    --sp-3: 0.75rem;
+    --sp-4: 1rem;
+    --sp-5: 1.5rem;
+    --sp-6: 2rem;
+    --sp-7: 3rem;
+    --sp-8: 4rem;
+    --sp-9: 6rem;
+
+    /* ============ geometry ============ */
+    --sidebar: 16.5rem;
+    --container: 82rem;
+    --container-narrow: 30rem;
+
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --radius-pill: 999px;
+
+    /* ============ motion ============ */
+    --ease: cubic-bezier(.2, .7, .3, 1);
+    --fast: 140ms;
+    --slow: 260ms;
+
+    color-scheme: light;
+}
+
+/* ---------- dark: system preference, unless explicitly set light ---------- */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --ground: #0A0E1A;
+        --surface: #121828;
+        --surface-2: #171E31;
+        --surface-3: #1E263B;
+
+        --ink: #E9ECF5;
+        --ink-muted: #98A2BA;
+        --ink-faint: #6C7590;
+
+        --rule: #222A40;
+        --rule-strong: #2F394F;
+
+        --royal-deep: #16246B;
+        --royal-700: #2A47C4;
+        --royal: #4468EA;
+        --royal-400: #7A95F3;
+        --royal-100: #1B2550;
+        --royal-50: #141B36;
+        --on-royal: #FFFFFF;
+
+        --good: #3FBE90;
+        --good-wash: #102A22;
+        --bad: #E0736B;
+        --bad-wash: #2B1614;
+
+        --hatch-line: #333D57;
+
+        --focus: #7A95F3;
+
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+        --shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+        --shadow-lg: 0 2px 6px rgba(0, 0, 0, .45), 0 24px 48px -20px rgba(0, 0, 0, .8);
+        --shadow-royal: 0 12px 28px -14px rgba(0, 0, 0, .8);
+
+        color-scheme: dark;
+    }
+}
+
+/* ---------- dark: explicit choice wins in both directions ---------- */
+:root[data-theme="dark"] {
+    --ground: #0A0E1A;
+    --surface: #121828;
+    --surface-2: #171E31;
+    --surface-3: #1E263B;
+
+    --ink: #E9ECF5;
+    --ink-muted: #98A2BA;
+    --ink-faint: #6C7590;
+
+    --rule: #222A40;
+    --rule-strong: #2F394F;
+
+    --royal-deep: #16246B;
+    --royal-700: #2A47C4;
+    --royal: #4468EA;
+    --royal-400: #7A95F3;
+    --royal-100: #1B2550;
+    --royal-50: #141B36;
+    --on-royal: #FFFFFF;
+
+    --good: #3FBE90;
+    --good-wash: #102A22;
+    --bad: #E0736B;
+    --bad-wash: #2B1614;
+
+    --hatch-line: #333D57;
+
+    --focus: #7A95F3;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+    --shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+    --shadow-lg: 0 2px 6px rgba(0, 0, 0, .45), 0 24px 48px -20px rgba(0, 0, 0, .8);
+    --shadow-royal: 0 12px 28px -14px rgba(0, 0, 0, .8);
+
+    color-scheme: dark;
+}

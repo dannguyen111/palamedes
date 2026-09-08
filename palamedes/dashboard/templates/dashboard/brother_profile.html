@@ -1,86 +1,80 @@
 {% extends "homepage/base.html" %}
 
-{% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'brother_directory' %}">Directory</a></li>
-<li class="breadcrumb-item active" aria-current="page">{{ brother.first_name }}'s Profile</li>
+{% block page_header %}
+<header class="page-header">
+    <div>
+        <a class="page-header__back" href="{% url 'brother_directory' %}">
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+            Directory
+        </a>
+        <h1 class="page-header__title">{{ brother.first_name }} {{ brother.last_name }}</h1>
+    </div>
+</header>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card shadow border-0 text-center p-4">
-                <img src="{{ brother.image.url }}" class="rounded-circle img-thumbnail mx-auto d-block mb-3"
-                    style="width: 200px; height: 200px; object-fit: cover;">
 
-                <h3 class="font-weight-bold mb-1">{{ brother.first_name }} {{ brother.last_name }}</h3>
-                <div class="mb-3">
-                    <span class="badge badge-pill badge-primary px-3 py-2">{{ brother.get_status_display }}</span>
-                </div>
+<div class="grid grid--split" style="align-items:start">
 
-                <hr>
-
-                <div class="d-grid gap-2">
-                    <a href="mailto:{{ brother.email }}" class="btn btn-primary btn-block mb-2">
-                        <i class="fas fa-envelope mr-2"></i> Email Brother
-                    </a>
-                    {% if brother.phone_number %}
-                    <a href="tel:{{ brother.phone_number }}" class="btn btn-success btn-block">
-                        <i class="fas fa-phone mr-2"></i> {{ brother.phone_number }}
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
+    <div class="card">
+        <div class="card__header">
+            <h2 class="card__title">About</h2>
         </div>
-
-        <div class="col-md-8">
-            <div class="card shadow border-0 h-100">
-                <div class="card-header bg-white border-bottom-0 pt-4 px-4">
-                    <h5 class="font-weight-bold text-secondary text-uppercase mb-0">About</h5>
+        <div class="card__body">
+            <dl class="grid grid--2" style="gap:var(--sp-5);margin:0">
+                <div>
+                    <dt class="eyebrow">Major</dt>
+                    <dd style="margin:var(--sp-1) 0 0;font-size:var(--step-1)">{{ brother.major|default:"Undeclared" }}</dd>
                 </div>
-                <div class="card-body px-4">
-
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-3">
-                            <small class="text-muted text-uppercase font-weight-bold">Major</small>
-                            <h5 class="text-dark">{{ brother.major|default:"Undeclared" }}</h5>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <small class="text-muted text-uppercase font-weight-bold">Hometown</small>
-                            <h5 class="text-dark">{{ brother.hometown|default:"Unknown" }}</h5>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <small class="text-muted text-uppercase font-weight-bold">Pledge Class</small>
-                            <h5 class="text-dark">
-                                {% if brother.pledge_semester %}
-                                {{ brother.pledge_semester }} {{ brother.pledge_year }}
-                                {% else %}
-                                <span class="text-muted font-italic">Not listed</span>
-                                {% endif %}
-                            </h5>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <small class="text-muted text-uppercase font-weight-bold">Chapter Status</small>
-                            <h5 class="text-dark">{{ brother.get_status_display }}</h5>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-12">
-                            <small class="text-muted text-uppercase font-weight-bold">Biography</small>
-                            <p class="mt-2 text-justify">
-                                {% if brother.bio %}
-                                {{ brother.bio|linebreaks }}
-                                {% else %}
-                                <span class="text-muted font-italic">No biography has been added yet.</span>
-                                {% endif %}
-                            </p>
-                        </div>
-                    </div>
-
+                <div>
+                    <dt class="eyebrow">Hometown</dt>
+                    <dd style="margin:var(--sp-1) 0 0;font-size:var(--step-1)">{{ brother.hometown|default:"Not listed" }}</dd>
                 </div>
-            </div>
+                <div>
+                    <dt class="eyebrow">Pledge class</dt>
+                    <dd style="margin:var(--sp-1) 0 0;font-size:var(--step-1)">
+                        {% if brother.pledge_semester %}{{ brother.pledge_semester }} {{ brother.pledge_year }}{% else %}Not listed{% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="eyebrow">Position</dt>
+                    <dd style="margin:var(--sp-1) 0 0;font-size:var(--step-1)">{{ brother.position.title|default:"Member" }}</dd>
+                </div>
+            </dl>
+
+            <hr>
+
+            <h3 class="eyebrow">Biography</h3>
+            {% if brother.bio %}
+            <div style="margin-top:var(--sp-2)">{{ brother.bio|linebreaks }}</div>
+            {% else %}
+            <p class="muted" style="margin-top:var(--sp-2)">Nothing written yet.</p>
+            {% endif %}
         </div>
     </div>
+
+    <div class="card">
+        <div class="card__body center">
+            {% include "components/avatar.html" with member=brother size="xl" %}
+            <h2 style="margin-top:var(--sp-4)">{{ brother.first_name }} {{ brother.last_name }}</h2>
+            <div class="cluster" style="justify-content:center;margin-top:var(--sp-3)">
+                <span class="pill pill--class">{{ brother.get_status_display }}</span>
+            </div>
+        </div>
+        <div class="card__footer stack--tight">
+            <a class="btn btn--primary btn--block" href="mailto:{{ brother.email }}">
+                <svg class="icon" aria-hidden="true"><use href="#i-mail"></use></svg>
+                Email
+            </a>
+            {% if brother.phone_number %}
+            <a class="btn btn--outline btn--block" href="tel:{{ brother.phone_number }}">
+                <svg class="icon" aria-hidden="true"><use href="#i-phone"></use></svg>
+                {{ brother.phone_number }}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
 </div>
+
 {% endblock %}
