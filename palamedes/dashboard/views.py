@@ -5,9 +5,11 @@ from django.conf import settings
 from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.db import transaction
 from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
-from .models import HousePoint, Due, Task, Announcement
+from .models import HousePoint, Due, Task, Announcement, ProcessedStripeSession
 from .forms import NMPointRequestForm, ActivePointRequestForm, DirectPointAssignmentForm, SingleDueForm, BulkDueForm, BulkPointForm
 from users.models import CustomUser
 from django.http import JsonResponse
@@ -104,11 +106,23 @@ def assign_points(request):
 
 @login_required
 def manage_point_request(request, pk):
-    point = get_object_or_404(HousePoint, pk=pk)
-    
-    # Security: Ensure user is allowed to modify this
-    is_approver = point.assigned_approver == request.user
-    is_top2 = bool(request.user.position and request.user.position.can_manage_points) and point.assigned_approver is None
+    # Users without a chapter are turned away first: filtering on
+    # chapter_id=None would match points that also have no chapter.
+    if request.user.chapter_id is None:
+        messages.error(request, "You do not have permission to manage this request.")
+        return redirect('points_hub')
+    point = get_object_or_404(HousePoint, pk=pk, chapter_id=request.user.chapter_id)
+
+    # Security: Ensure user is allowed to modify this.
+    # No one approves points for themselves, except when accepting a
+    # counter-offer on their own request (is_owner_countering).
+    is_own_points = point.user == request.user
+    is_approver = point.assigned_approver == request.user and not is_own_points
+    is_top2 = (
+        bool(request.user.position and request.user.position.can_manage_points)
+        and point.assigned_approver is None
+        and not is_own_points
+    )
     is_owner_countering = point.submitted_by == request.user and point.status == 'COUNTERED'
 
     if not (is_approver or is_top2 or is_owner_countering):
@@ -481,46 +495,55 @@ def payment_success(request):
         messages.error(request, "There was a problem verifying your payment. Please contact support if this persists.")
         return redirect('dashboard')
 
-    processed_sessions = request.session.get('processed_sessions', [])
+    # Only continue if Stripe says the money arrived. A session exists as
+    # soon as checkout starts, even if the member cancels or is declined.
+    if session.payment_status != 'paid':
+        messages.error(request, "That payment didn't go through, so nothing was charged.")
+        return redirect('dues_dashboard')
 
-    if session.metadata['payment_type'] == 'bulk_payment':
-        due_ids_str = session.metadata.get('due_ids_str')
-        if due_ids_str:
-            due_ids = due_ids_str.split(',')
-
-            dues_paid = Due.objects.filter(pk__in = due_ids, assigned_to = request.user) 
-
-            for due in dues_paid:   
-                due.is_paid = True
-                due.amount = 0
-                due.save()
-            return render(request, 'dashboard/successful_payment.html', {'dues': dues_paid})
+    # Only the member who started the checkout can use the link.
+    metadata = session.metadata or {}
+    if str(metadata.get('user_id')) != str(request.user.id):
+        messages.error(request, "This payment belongs to a different account.")
+        return redirect('dashboard')
 
     amount_paid = Decimal(session.amount_total) / Decimal(100)
-    due_id = session.metadata['due_id']
 
-    due = get_object_or_404(Due, pk = due_id)
+    with transaction.atomic():
+        # session_id is unique, so only the first visit applies the payment.
+        # Revisiting the link (any browser, any device) just shows the receipt.
+        _, first_visit = ProcessedStripeSession.objects.get_or_create(
+            session_id=session_id,
+            defaults={'user': request.user, 'amount': amount_paid},
+        )
+
+        if metadata.get('payment_type') == 'bulk_payment':
+            due_ids = [i for i in metadata.get('due_ids_str', '').split(',') if i.isdigit()]
+            dues_paid = list(
+                Due.objects.select_for_update().filter(pk__in=due_ids, assigned_to=request.user)
+            )
+            if first_visit:
+                for due in dues_paid:
+                    # Keep the amount so history shows what was paid.
+                    due.is_paid = True
+                    due.save(update_fields=['is_paid'])
+            return render(request, 'dashboard/successful_payment.html', {'dues': dues_paid})
+
+        due = get_object_or_404(
+            Due.objects.select_for_update(),
+            pk=metadata.get('due_id'),
+            assigned_to=request.user,
+        )
+        if first_visit:
+            due.amount -= amount_paid
+            if due.amount <= 0:
+                due.is_paid = True
+            due.save()
 
     context = {
-    'due':due,
-    'amount_paid': amount_paid
+        'due': due,
+        'amount_paid': amount_paid,
     }
-
-
-    if session_id in processed_sessions:
-        return render(request, 'dashboard/successful_payment.html', context) 
-
-    processed_sessions.append(session_id)
-    request.session['processed_sessions'] = processed_sessions
-    request.session.modified = True
-
-    due.amount -= amount_paid
-
-    if due.amount <= 0:
-        due.is_paid = True
-    due.save()
-
-
     return render(request, 'dashboard/successful_payment.html', context)
 
 @login_required
@@ -533,36 +556,44 @@ def make_payment_treasurer(request, pk):
     return render(request, 'dashboard/paid_treasurer.html', context)
 
 @login_required
+@require_POST
 def mark_paid(request, pk):
-    due = get_object_or_404(Due, pk=pk)
-    
-    if request.user.position and request.user.position.can_manage_finance:
-        amount = request.POST.get('amount')
-        if not amount:
-            payment_amount = due.amount
-        else:
-            try:
-                payment_amount = int(amount)
-            except (TypeError, ValueError):
-                messages.error(request, "Invalid payment amount. Please enter a whole number.")
-                return redirect('brothers_due', due.assigned_to.pk)
-            if payment_amount < 0:
-                messages.error(request, "Invalid payment amount. Amount cannot be negative.")
-                return redirect('brothers_due', due.assigned_to.pk)
-
-        due.amount -= payment_amount
-
-        if due.amount <= 0:
-            due.is_paid = True
-        due.save()
-
-        if due.amount <= 0:
-            messages.success(request, "Marked as Paid.")
-        else:
-            messages.success(request, f'The due has been updated. {due.assigned_to.first_name }  {due.assigned_to.last_name } still has {due.amount} left to pay.')
-    else:
+    if not (request.user.position and request.user.position.can_manage_finance):
         messages.error(request, "Only people with permission can verify payments.")
-        
+        return redirect('dues_dashboard')
+
+    # Only dues belonging to members of the treasurer's own chapter.
+    due = get_object_or_404(
+        Due,
+        pk=pk,
+        assigned_to__isnull=False,
+        assigned_to__chapter_id=request.user.chapter_id,
+    )
+
+    amount = request.POST.get('amount')
+    if not amount:
+        payment_amount = due.amount
+    else:
+        try:
+            payment_amount = int(amount)
+        except (TypeError, ValueError):
+            messages.error(request, "Invalid payment amount. Please enter a whole number.")
+            return redirect('brothers_due', due.assigned_to.pk)
+        if payment_amount < 0:
+            messages.error(request, "Invalid payment amount. Amount cannot be negative.")
+            return redirect('brothers_due', due.assigned_to.pk)
+
+    due.amount -= payment_amount
+
+    if due.amount <= 0:
+        due.is_paid = True
+    due.save()
+
+    if due.amount <= 0:
+        messages.success(request, "Marked as Paid.")
+    else:
+        messages.success(request, f'The due has been updated. {due.assigned_to.first_name }  {due.assigned_to.last_name } still has {due.amount} left to pay.')
+
     return redirect('brothers_due', due.assigned_to.pk)
 
 @login_required
@@ -710,8 +741,15 @@ def manage_points_creation(request):
 
 @login_required
 def edit_log_point(request, pk):
-    point = get_object_or_404(HousePoint, pk=pk)
-    
+    if request.user.chapter_id is None:
+        messages.error(request, "You do not have permission to edit this log.")
+        return redirect('points_hub')
+    point = get_object_or_404(HousePoint, pk=pk, chapter_id=request.user.chapter_id)
+
+    if point.user == request.user:
+        messages.error(request, "You can't edit your own point log.")
+        return redirect('points_hub')
+
     # Check permissions
     can_edit_all = request.user.position and request.user.position.can_manage_points
     can_edit_nm = request.user.position and request.user.position.can_manage_nm_points and point.user.status == 'NM'

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from django.test import TestCase
 from django.urls import reverse
 
-from dashboard.models import Due
+from dashboard.models import Due, ProcessedStripeSession
 from palamedes.test_helpers import PLAIN_STATIC_STORAGE, make_chapter_with_positions, make_user
 
 
@@ -328,17 +328,23 @@ class PaymentSuccessViewTests(TestCase):
         messages = list(response.context["messages"])
         self.assertTrue(any("problem verifying your payment" in str(m) for m in messages))
 
+    def paid_session(self, user=None, **metadata):
+        """A mocked Stripe Checkout Session that Stripe reports as paid and
+        that was started by `user` (self.user by default)."""
+        amount_total = metadata.pop("amount_total", 10000)
+        metadata.setdefault("user_id", str((user or self.user).id))
+        return MagicMock(payment_status="paid", amount_total=amount_total, metadata=metadata)
+
     @patch("dashboard.views.stripe.checkout.Session.retrieve")
-    def test_bulk_payment_marks_owned_dues_paid_and_zeroed(self, mock_retrieve):
+    def test_bulk_payment_marks_owned_dues_paid_and_keeps_amounts(self, mock_retrieve):
         due2 = Due.objects.create(
             title="Spring Dues", amount="50.00", due_date=date.today(),
             assigned_to=self.user, is_paid=False,
         )
-        mock_retrieve.return_value = MagicMock(
-            metadata={
-                "payment_type": "bulk_payment",
-                "due_ids_str": f"{self.due.pk},{due2.pk}",
-            }
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="bulk_payment",
+            due_ids_str=f"{self.due.pk},{due2.pk}",
+            amount_total=15000,
         )
         response = self.client.get(
             reverse("payment_success"), {"session_id": "sess_bulk"}
@@ -348,9 +354,10 @@ class PaymentSuccessViewTests(TestCase):
         self.due.refresh_from_db()
         due2.refresh_from_db()
         self.assertTrue(self.due.is_paid)
-        self.assertEqual(self.due.amount, 0)
         self.assertTrue(due2.is_paid)
-        self.assertEqual(due2.amount, 0)
+        # Amounts are kept so payment history shows what was paid.
+        self.assertEqual(self.due.amount, Decimal("100.00"))
+        self.assertEqual(due2.amount, Decimal("50.00"))
 
     @patch("dashboard.views.stripe.checkout.Session.retrieve")
     def test_bulk_payment_only_affects_dues_owned_by_requesting_user(self, mock_retrieve):
@@ -359,11 +366,9 @@ class PaymentSuccessViewTests(TestCase):
             title="Not Yours", amount="20.00", due_date=date.today(),
             assigned_to=other_user, is_paid=False,
         )
-        mock_retrieve.return_value = MagicMock(
-            metadata={
-                "payment_type": "bulk_payment",
-                "due_ids_str": f"{self.due.pk},{others_due.pk}",
-            }
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="bulk_payment",
+            due_ids_str=f"{self.due.pk},{others_due.pk}",
         )
         self.client.get(reverse("payment_success"), {"session_id": "sess_bulk2"})
         others_due.refresh_from_db()
@@ -372,8 +377,8 @@ class PaymentSuccessViewTests(TestCase):
 
     @patch("dashboard.views.stripe.checkout.Session.retrieve")
     def test_single_payment_full_amount_marks_due_paid(self, mock_retrieve):
-        mock_retrieve.return_value = MagicMock(
-            metadata={"payment_type": "single", "due_id": str(self.due.pk)},
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="single", due_id=str(self.due.pk),
             amount_total=10000,  # $100.00 in cents
         )
         response = self.client.get(
@@ -386,8 +391,8 @@ class PaymentSuccessViewTests(TestCase):
 
     @patch("dashboard.views.stripe.checkout.Session.retrieve")
     def test_single_payment_partial_amount_leaves_remaining_balance(self, mock_retrieve):
-        mock_retrieve.return_value = MagicMock(
-            metadata={"payment_type": "single", "due_id": str(self.due.pk)},
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="single", due_id=str(self.due.pk),
             amount_total=4000,  # $40.00 in cents
         )
         response = self.client.get(
@@ -400,43 +405,83 @@ class PaymentSuccessViewTests(TestCase):
 
     @patch("dashboard.views.stripe.checkout.Session.retrieve")
     def test_replayed_session_id_does_not_mutate_due_again(self, mock_retrieve):
-        mock_retrieve.return_value = MagicMock(
-            metadata={"payment_type": "single", "due_id": str(self.due.pk)},
-            amount_total=4000,
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="single", due_id=str(self.due.pk), amount_total=4000,
         )
         self.client.get(reverse("payment_success"), {"session_id": "sess_replay"})
         self.due.refresh_from_db()
         self.assertEqual(self.due.amount, Decimal("60.00"))
 
-        # Second hit with the same session_id should be a no-op (idempotency
-        # guard via request.session['processed_sessions']).
+        # Logging out wipes the browser session. The replay guard lives in
+        # the database, so a fresh login still can't apply it twice.
+        self.client.logout()
+        self.client.force_login(self.user)
         response = self.client.get(
             reverse("payment_success"), {"session_id": "sess_replay"}
         )
         self.assertEqual(response.status_code, 200)
         self.due.refresh_from_db()
         self.assertEqual(self.due.amount, Decimal("60.00"))
+        self.assertEqual(ProcessedStripeSession.objects.filter(session_id="sess_replay").count(), 1)
 
     @patch("dashboard.views.stripe.checkout.Session.retrieve")
-    def test_single_payment_has_no_ownership_check_on_the_due(self, mock_retrieve):
-        # get_object_or_404(Due, pk=due_id) here has no assigned_to filter,
-        # unlike payment_page/process_payment which both scope by
-        # assigned_to=request.user. Any logged-in user who obtains/guesses a
-        # valid session_id referencing someone else's due can mark it paid
-        # through this view. Pinning the gap; see codebase-notes.md §6.
+    def test_replayed_bulk_session_is_recorded_once(self, mock_retrieve):
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="bulk_payment", due_ids_str=str(self.due.pk),
+        )
+        self.client.get(reverse("payment_success"), {"session_id": "sess_bulk_replay"})
+        self.client.get(reverse("payment_success"), {"session_id": "sess_bulk_replay"})
+        self.assertEqual(
+            ProcessedStripeSession.objects.filter(session_id="sess_bulk_replay").count(), 1
+        )
+
+    @patch("dashboard.views.stripe.checkout.Session.retrieve")
+    def test_unpaid_session_changes_nothing(self, mock_retrieve):
+        # A session exists as soon as checkout starts, even if the member
+        # cancels. Opening the success link for it must not mark anything paid.
+        session = self.paid_session(
+            payment_type="bulk_payment", due_ids_str=str(self.due.pk),
+        )
+        session.payment_status = "unpaid"
+        mock_retrieve.return_value = session
+        response = self.client.get(
+            reverse("payment_success"), {"session_id": "sess_abandoned"}, follow=True
+        )
+        self.assertRedirects(response, reverse("dues_dashboard"))
+        self.due.refresh_from_db()
+        self.assertFalse(self.due.is_paid)
+        self.assertEqual(self.due.amount, Decimal("100.00"))
+        self.assertFalse(ProcessedStripeSession.objects.exists())
+
+    @patch("dashboard.views.stripe.checkout.Session.retrieve")
+    def test_session_started_by_another_user_changes_nothing(self, mock_retrieve):
+        other_user = make_user(chapter=self.chapter)
+        mock_retrieve.return_value = self.paid_session(
+            user=other_user, payment_type="single", due_id=str(self.due.pk),
+        )
+        response = self.client.get(
+            reverse("payment_success"), {"session_id": "sess_not_mine"}, follow=True
+        )
+        self.assertRedirects(response, reverse("dashboard"))
+        self.due.refresh_from_db()
+        self.assertEqual(self.due.amount, Decimal("100.00"))
+        self.assertFalse(ProcessedStripeSession.objects.exists())
+
+    @patch("dashboard.views.stripe.checkout.Session.retrieve")
+    def test_single_payment_for_someone_elses_due_returns_404(self, mock_retrieve):
+        # Issue #54: the Due lookup is now limited to the logged-in user.
         other_user = make_user(chapter=self.chapter)
         others_due = Due.objects.create(
             title="Not Yours", amount="100.00", due_date=date.today(),
             assigned_to=other_user, is_paid=False,
         )
-        mock_retrieve.return_value = MagicMock(
-            metadata={"payment_type": "single", "due_id": str(others_due.pk)},
-            amount_total=10000,
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="single", due_id=str(others_due.pk),
         )
-        # self.user (not others_due's owner) hits payment_success.
         response = self.client.get(
             reverse("payment_success"), {"session_id": "sess_cross_user"}
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 404)
         others_due.refresh_from_db()
-        self.assertTrue(others_due.is_paid)
+        self.assertFalse(others_due.is_paid)
+        self.assertEqual(others_due.amount, Decimal("100.00"))

@@ -264,7 +264,36 @@ class MarkPaidViewTests(TestCase):
         response = self.client.post(
             reverse("mark_paid", kwargs={"pk": self.due.pk}), data={}
         )
-        self.assertRedirects(response, self.brothers_due_url)
+        self.assertRedirects(response, reverse("dues_dashboard"))
+        self.due.refresh_from_db()
+        self.assertEqual(self.due.amount, 100)
+        self.assertFalse(self.due.is_paid)
+
+    def test_get_request_is_rejected_and_makes_no_change(self):
+        # Visiting the URL (a link, an <img>) must not mark a due paid.
+        treasurer = make_user(
+            chapter=self.chapter, status="ACT", position=self.positions["Treasurer"]
+        )
+        self.client.force_login(treasurer)
+        response = self.client.get(reverse("mark_paid", kwargs={"pk": self.due.pk}))
+        self.assertEqual(response.status_code, 405)
+        self.due.refresh_from_db()
+        self.assertEqual(self.due.amount, 100)
+        self.assertFalse(self.due.is_paid)
+
+    def test_treasurer_from_another_chapter_gets_404(self):
+        other_chapter, other_positions = make_chapter_with_positions(
+            name="Sigma Chi", university="UCLA",
+            nm_invite_code="NMCODE02", active_invite_code="ACTCODE2",
+        )
+        outside_treasurer = make_user(
+            chapter=other_chapter, status="ACT", position=other_positions["Treasurer"]
+        )
+        self.client.force_login(outside_treasurer)
+        response = self.client.post(
+            reverse("mark_paid", kwargs={"pk": self.due.pk}), data={}
+        )
+        self.assertEqual(response.status_code, 404)
         self.due.refresh_from_db()
         self.assertEqual(self.due.amount, 100)
         self.assertFalse(self.due.is_paid)

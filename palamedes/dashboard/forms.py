@@ -45,8 +45,8 @@ class DirectPointAssignmentForm(forms.ModelForm):
     def __init__(self, request_user, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Base queryset: Everyone in my chapter
-        queryset = CustomUser.objects.filter(chapter=request_user.chapter)
+        # Base queryset: everyone in my chapter except me (no awarding yourself)
+        queryset = CustomUser.objects.filter(chapter=request_user.chapter).exclude(pk=request_user.pk)
 
         # Check permissions
         user_pos = getattr(request_user, 'position', None)

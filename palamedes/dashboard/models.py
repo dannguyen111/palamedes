@@ -51,6 +51,17 @@ class Due(models.Model):
     def __str__(self):
         return f"{self.title} - ${self.amount}"
 
+class ProcessedStripeSession(models.Model):
+    """A Stripe Checkout Session that has already been applied to dues.
+    The unique session_id is what stops one payment being counted twice."""
+    session_id = models.CharField(max_length=255, unique=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='processed_stripe_sessions')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    processed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.session_id} - ${self.amount}"
+
 class Task(models.Model):
     assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tasks')
     assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_tasks')
