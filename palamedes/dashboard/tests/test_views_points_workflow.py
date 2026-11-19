@@ -192,23 +192,21 @@ class ManagePointRequestViewTests(TestCase):
         point.refresh_from_db()
         self.assertEqual(point.status, "PENDING")
 
-    def test_position_none_crashes_regardless_of_other_permissions(self):
-        # is_top2 = request.user.position.can_manage_points ... is evaluated
-        # unconditionally and unguarded, so ANY call by a position=None user
-        # raises AttributeError before the is_approver/is_owner_countering
-        # checks even matter — see codebase-notes.md §6.
+    def test_position_none_cannot_approve_unassigned_point(self):
+        # With no position there is no can_manage_points, so an unassigned
+        # point can't be approved by this user.
         point = self.make_point(assigned_approver=None)
-        approver_without_position = make_user(
+        user_without_position = make_user(
             chapter=self.chapter, status="ACT", position=None
         )
-        # Even though this user isn't the approver/submitter, the crash
-        # happens before permission is even evaluated.
-        self.client.force_login(approver_without_position)
-        with self.assertRaises(AttributeError):
-            self.client.post(
-                reverse("manage_point", kwargs={"pk": point.pk}),
-                data={"action": "approve"},
-            )
+        self.client.force_login(user_without_position)
+        response = self.client.post(
+            reverse("manage_point", kwargs={"pk": point.pk}),
+            data={"action": "approve"},
+        )
+        self.assertRedirects(response, reverse("points_hub"))
+        point.refresh_from_db()
+        self.assertEqual(point.status, "PENDING")
 
     def test_assigned_approver_can_approve(self):
         point = self.make_point(assigned_approver=self.approver)

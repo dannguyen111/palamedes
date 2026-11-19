@@ -38,17 +38,19 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse("dashboard"))
         self.assertEqual(response.context["total_points"], 10)
 
-    def test_pending_points_are_not_exposed_in_context(self):
-        # pending_points is computed in the view but never added to the
-        # context dict — dead code. Pinning that it stays absent, per
-        # codebase-notes.md §5.
+    def test_pending_points_sums_pending_only(self):
+        # The dashboard shows pending points next to approved ones.
         HousePoint.objects.create(
             user=self.user, chapter=self.chapter, amount=100, description="b",
             status="PENDING",
         )
+        HousePoint.objects.create(
+            user=self.user, chapter=self.chapter, amount=40, description="c",
+            status="APPROVED",
+        )
         self.client.force_login(self.user)
         response = self.client.get(reverse("dashboard"))
-        self.assertNotIn("pending_points", response.context)
+        self.assertEqual(response.context["pending_points"], 100)
 
     def test_dues_balance_sums_unpaid_dues_only(self):
         Due.objects.create(

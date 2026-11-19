@@ -18,13 +18,13 @@ class DuesDashboardViewTests(TestCase):
             response, f"{reverse('login')}?next={reverse('dues_dashboard')}"
         )
 
-    def test_position_none_crashes(self):
-        # is_treasurer = user.position.can_manage_finance is unguarded — see
-        # codebase-notes.md §6.
+    def test_position_none_sees_member_view(self):
+        # A member with no position gets the regular (non-treasurer) view.
         user = make_user(chapter=self.chapter, status="ACT", position=None)
         self.client.force_login(user)
-        with self.assertRaises(AttributeError):
-            self.client.get(reverse("dues_dashboard"))
+        response = self.client.get(reverse("dues_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["is_treasurer"])
 
     def test_is_treasurer_reflects_can_manage_finance(self):
         treasurer = make_user(
@@ -244,17 +244,18 @@ class MarkPaidViewTests(TestCase):
             "brothers_due", kwargs={"pk": self.member.pk}
         )
 
-    def test_position_none_crashes(self):
-        # request.user.position.can_manage_finance is unguarded — see
-        # codebase-notes.md §6.
-        treasurer_without_position = make_user(
+    def test_position_none_is_denied_without_change(self):
+        # A user with no position has no finance permission.
+        user_without_position = make_user(
             chapter=self.chapter, status="ACT", position=None
         )
-        self.client.force_login(treasurer_without_position)
-        with self.assertRaises(AttributeError):
-            self.client.post(
-                reverse("mark_paid", kwargs={"pk": self.due.pk}), data={}
-            )
+        self.client.force_login(user_without_position)
+        response = self.client.post(
+            reverse("mark_paid", kwargs={"pk": self.due.pk}), data={}
+        )
+        self.assertRedirects(response, reverse("dues_dashboard"))
+        self.due.refresh_from_db()
+        self.assertFalse(self.due.is_paid)
 
     def test_without_permission_makes_no_change(self):
         no_permission = make_user(
