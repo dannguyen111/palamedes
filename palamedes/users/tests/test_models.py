@@ -63,17 +63,18 @@ class PositionModelTests(TestCase):
         self.assertFalse(position.can_create_positions)
         self.assertFalse(position.can_manage_nm_points)
 
-    def test_duplicate_titles_within_same_chapter_are_permitted(self):
-        # No unique_together on (chapter, title) at the model level, even
-        # though app logic (Position.objects.get(...) in
-        # CustomUserCreationForm.save()) assumes uniqueness of well-known
-        # titles per chapter. Pinning the model's permissive behavior here —
-        # see codebase-notes.md §4.
+    def test_duplicate_titles_within_same_chapter_are_rejected(self):
+        # Registration looks positions up by title, so the database must
+        # refuse a second "President" in the same chapter.
         Position.objects.create(chapter=self.chapter, title="President")
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Position.objects.create(chapter=self.chapter, title="President")
+
+    def test_same_title_in_different_chapters_is_allowed(self):
+        other = Chapter.objects.create(name="Sigma Nu", university="UCLA")
         Position.objects.create(chapter=self.chapter, title="President")
-        self.assertEqual(
-            Position.objects.filter(chapter=self.chapter, title="President").count(), 2
-        )
+        Position.objects.create(chapter=other, title="President")
+        self.assertEqual(Position.objects.filter(title="President").count(), 2)
 
 
 class CustomUserModelTests(TestCase):

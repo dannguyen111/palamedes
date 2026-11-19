@@ -1,18 +1,8 @@
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 
 from homepage.models import ChapterRequest
-from palamedes.test_helpers import make_user
-
-# base.html (extended by every homepage template) references {% static %}
-# assets. STATICFILES_STORAGE is WhiteNoise's CompressedManifestStaticFilesStorage
-# in settings.py, which requires a collectstatic-generated manifest that
-# doesn't exist in this test environment. Swap to the plain storage backend
-# for any test that renders a full page, or `{% static %}` raises
-# ValueError: Missing staticfiles manifest entry (see codebase-notes.md §2).
-_PLAIN_STATIC_STORAGE = override_settings(
-    STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage"
-)
+from palamedes.test_helpers import PLAIN_STATIC_STORAGE as _PLAIN_STATIC_STORAGE, make_user
 
 
 @_PLAIN_STATIC_STORAGE

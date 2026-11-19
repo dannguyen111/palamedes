@@ -548,7 +548,17 @@ def payment_success(request):
 
 @login_required
 def make_payment_treasurer(request, pk):
-    due = get_object_or_404(Due, pk=pk)
+    if not (request.user.position and request.user.position.can_manage_finance):
+        messages.error(request, "Access Denied.")
+        return redirect('dues_dashboard')
+
+    # Only dues belonging to members of the treasurer's own chapter.
+    due = get_object_or_404(
+        Due,
+        pk=pk,
+        assigned_to__isnull=False,
+        assigned_to__chapter_id=request.user.chapter_id,
+    )
     context = {
         'due' : due
     }
@@ -623,8 +633,11 @@ def directory(request):
 
 @login_required
 def unpaid_directory(request):
-    user = request.user
-    chapter = request.user.chapter 
+    if not (request.user.position and request.user.position.can_manage_finance):
+        messages.error(request, "Access Denied.")
+        return redirect('dues_dashboard')
+
+    chapter = request.user.chapter
     members = CustomUser.objects.filter(dues__is_paid = False, chapter = chapter).distinct() \
         .annotate(total_dues=Sum('dues__amount')
     )
@@ -649,8 +662,15 @@ def unpaid_directory(request):
 
     return render(request, 'dashboard/unpaid_directory.html', context)
 
+@login_required
 def dues_member(request, pk):
-    brother = get_object_or_404(CustomUser, pk=pk)
+    # Treasurer drill-down from "Who still owes". Members see their own dues
+    # on the dues dashboard.
+    if not (request.user.position and request.user.position.can_manage_finance):
+        messages.error(request, "Access Denied.")
+        return redirect('dues_dashboard')
+
+    brother = get_object_or_404(CustomUser, pk=pk, chapter_id=request.user.chapter_id)
     dues = Due.objects.filter(assigned_to=brother).order_by('is_paid', 'due_date')
 
     context = {

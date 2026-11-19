@@ -61,7 +61,24 @@ class DirectoryViewTests(TestCase):
 class UnpaidDirectoryViewTests(TestCase):
     def setUp(self):
         self.chapter, self.positions = make_chapter_with_positions()
-        self.user = make_user(chapter=self.chapter, status="ACT")
+        # The page is treasurer-only, so the viewer needs finance permission.
+        self.user = make_user(
+            chapter=self.chapter, status="ACT", position=self.positions["Treasurer"]
+        )
+
+    def test_member_without_finance_permission_is_denied(self):
+        member = make_user(
+            chapter=self.chapter, status="ACT", position=self.positions["No Position"]
+        )
+        self.client.force_login(member)
+        response = self.client.get(reverse("unpaid_directory"))
+        self.assertRedirects(response, reverse("dues_dashboard"))
+
+    def test_member_with_no_position_is_denied(self):
+        member = make_user(chapter=self.chapter, status="ACT", position=None)
+        self.client.force_login(member)
+        response = self.client.get(reverse("unpaid_directory"))
+        self.assertRedirects(response, reverse("dues_dashboard"))
 
     def test_anonymous_user_is_redirected_to_login(self):
         response = self.client.get(reverse("unpaid_directory"))

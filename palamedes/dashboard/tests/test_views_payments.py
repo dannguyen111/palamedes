@@ -42,6 +42,7 @@ class MakePaymentTreasurerViewTests(TestCase):
     def setUp(self):
         self.chapter, self.positions = make_chapter_with_positions()
         self.owner = make_user(chapter=self.chapter)
+        self.treasurer = make_user(chapter=self.chapter, position=self.positions["Treasurer"])
         self.due = Due.objects.create(
             title="Fall Dues", amount="100.00", due_date=date.today(),
             assigned_to=self.owner, is_paid=False,
@@ -53,57 +54,73 @@ class MakePaymentTreasurerViewTests(TestCase):
         self.assertRedirects(response, f"{reverse('login')}?next={url}")
 
     def test_nonexistent_pk_returns_404(self):
-        self.owner_login()
+        self.client.force_login(self.treasurer)
         response = self.client.get(reverse("make_mark_paid", kwargs={"pk": 999999}))
         self.assertEqual(response.status_code, 404)
 
-    def owner_login(self):
-        self.client.force_login(self.owner)
-
-    def test_any_logged_in_user_can_view_any_due_no_permission_gate(self):
-        # No permission check at all here — unlike mark_paid (which at
-        # least checks can_manage_finance, even if unguarded against
-        # position=None). Any authenticated user, including one from a
-        # completely different chapter with no relation to this due, can
-        # view it. Pinning the gap; see codebase-notes.md §6.
-        other_chapter, _ = make_chapter_with_positions(
-            name="Sigma Nu", nm_invite_code="OTHNM005", active_invite_code="OTHACT05"
-        )
-        stranger = make_user(chapter=other_chapter)
-        self.client.force_login(stranger)
+    def test_treasurer_can_view_due_in_own_chapter(self):
+        self.client.force_login(self.treasurer)
         response = self.client.get(reverse("make_mark_paid", kwargs={"pk": self.due.pk}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["due"], self.due)
+
+    def test_member_without_finance_permission_is_denied(self):
+        # Issue #52: this screen used to have no permission check.
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("make_mark_paid", kwargs={"pk": self.due.pk}))
+        self.assertRedirects(response, reverse("dues_dashboard"))
+
+    def test_treasurer_from_another_chapter_gets_404(self):
+        other_chapter, other_positions = make_chapter_with_positions(
+            name="Sigma Nu", nm_invite_code="OTHNM005", active_invite_code="OTHACT05"
+        )
+        outsider = make_user(chapter=other_chapter, position=other_positions["Treasurer"])
+        self.client.force_login(outsider)
+        response = self.client.get(reverse("make_mark_paid", kwargs={"pk": self.due.pk}))
+        self.assertEqual(response.status_code, 404)
 
 
 class DuesMemberViewTests(TestCase):
     def setUp(self):
         self.chapter, self.positions = make_chapter_with_positions()
         self.member = make_user(chapter=self.chapter)
+        self.treasurer = make_user(chapter=self.chapter, position=self.positions["Treasurer"])
 
-    def test_anonymous_user_can_view_without_logging_in(self):
-        # dues_member (URL name brothers_due) is the one dashboard view with
-        # no @login_required — anonymous access is currently possible.
-        # Pinning the gap; see codebase-notes.md §6.
+    def test_anonymous_user_is_redirected_to_login(self):
+        # Issue #51: this page used to be readable without logging in.
+        url = reverse("brothers_due", kwargs={"pk": self.member.pk})
+        response = self.client.get(url)
+        self.assertRedirects(response, f"{reverse('login')}?next={url}")
+
+    def test_member_without_finance_permission_is_denied(self):
+        self.client.force_login(self.member)
+        response = self.client.get(
+            reverse("brothers_due", kwargs={"pk": self.member.pk})
+        )
+        self.assertRedirects(response, reverse("dues_dashboard"))
+
+    def test_treasurer_from_another_chapter_gets_404(self):
+        other_chapter, other_positions = make_chapter_with_positions(
+            name="Sigma Nu", nm_invite_code="OTHNM006", active_invite_code="OTHACT06"
+        )
+        outsider = make_user(chapter=other_chapter, position=other_positions["Treasurer"])
+        self.client.force_login(outsider)
+        response = self.client.get(
+            reverse("brothers_due", kwargs={"pk": self.member.pk})
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_treasurer_can_view_member_in_own_chapter(self):
+        self.client.force_login(self.treasurer)
         response = self.client.get(
             reverse("brothers_due", kwargs={"pk": self.member.pk})
         )
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "dashboard/member_dues_details.html")
-
-    def test_cross_chapter_user_can_view_with_no_scoping(self):
-        other_chapter, _ = make_chapter_with_positions(
-            name="Sigma Nu", nm_invite_code="OTHNM006", active_invite_code="OTHACT06"
-        )
-        outsider = make_user(chapter=other_chapter)
-        self.client.force_login(outsider)
-        response = self.client.get(
-            reverse("brothers_due", kwargs={"pk": self.member.pk})
-        )
-        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["brother"], self.member)
 
     def test_nonexistent_pk_returns_404(self):
+        self.client.force_login(self.treasurer)
         response = self.client.get(reverse("brothers_due", kwargs={"pk": 999999}))
         self.assertEqual(response.status_code, 404)
 
@@ -120,6 +137,7 @@ class DuesMemberViewTests(TestCase):
             title="Paid", amount="10.00", due_date=date(2025, 1, 1),
             assigned_to=self.member, is_paid=True,
         )
+        self.client.force_login(self.treasurer)
         response = self.client.get(
             reverse("brothers_due", kwargs={"pk": self.member.pk})
         )
