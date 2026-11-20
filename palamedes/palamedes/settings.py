@@ -124,12 +124,22 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Django 5.1+ reads storage backends only from STORAGES (the old
+# DEFAULT_FILE_STORAGE / STATICFILES_STORAGE settings are ignored).
+# "default" is switched to S3 further down when AWS keys are present.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Tests always use local storage (no manifest, never S3); see test_runner.py.
+TEST_RUNNER = 'palamedes.test_runner.LocalStorageTestRunner'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
@@ -161,11 +171,7 @@ if AWS_ACCESS_KEY_ID:
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None
     AWS_S3_VERIFY = True
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    
     # This prevents the S3 URL from signing (which expires after 1 hour)
-    AWS_QUERYSTRING_AUTH = False 
-else:
-    # If no keys (Local Development), use local folder
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    AWS_QUERYSTRING_AUTH = False
+    STORAGES["default"] = {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"}
+# Without keys (local development), uploads use MEDIA_ROOT set above.

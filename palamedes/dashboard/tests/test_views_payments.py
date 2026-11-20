@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from django.test import TestCase
 from django.urls import reverse
 
-from dashboard.models import Due
+from dashboard.models import Due, ProcessedStripeSession
 from palamedes.test_helpers import PLAIN_STATIC_STORAGE, make_chapter_with_positions, make_user
 
 
@@ -42,6 +42,7 @@ class MakePaymentTreasurerViewTests(TestCase):
     def setUp(self):
         self.chapter, self.positions = make_chapter_with_positions()
         self.owner = make_user(chapter=self.chapter)
+        self.treasurer = make_user(chapter=self.chapter, position=self.positions["Treasurer"])
         self.due = Due.objects.create(
             title="Fall Dues", amount="100.00", due_date=date.today(),
             assigned_to=self.owner, is_paid=False,
@@ -53,57 +54,73 @@ class MakePaymentTreasurerViewTests(TestCase):
         self.assertRedirects(response, f"{reverse('login')}?next={url}")
 
     def test_nonexistent_pk_returns_404(self):
-        self.owner_login()
+        self.client.force_login(self.treasurer)
         response = self.client.get(reverse("make_mark_paid", kwargs={"pk": 999999}))
         self.assertEqual(response.status_code, 404)
 
-    def owner_login(self):
-        self.client.force_login(self.owner)
-
-    def test_any_logged_in_user_can_view_any_due_no_permission_gate(self):
-        # No permission check at all here — unlike mark_paid (which at
-        # least checks can_manage_finance, even if unguarded against
-        # position=None). Any authenticated user, including one from a
-        # completely different chapter with no relation to this due, can
-        # view it. Pinning the gap; see codebase-notes.md §6.
-        other_chapter, _ = make_chapter_with_positions(
-            name="Sigma Nu", nm_invite_code="OTHNM005", active_invite_code="OTHACT05"
-        )
-        stranger = make_user(chapter=other_chapter)
-        self.client.force_login(stranger)
+    def test_treasurer_can_view_due_in_own_chapter(self):
+        self.client.force_login(self.treasurer)
         response = self.client.get(reverse("make_mark_paid", kwargs={"pk": self.due.pk}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["due"], self.due)
+
+    def test_member_without_finance_permission_is_denied(self):
+        # Issue #52: this screen used to have no permission check.
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("make_mark_paid", kwargs={"pk": self.due.pk}))
+        self.assertRedirects(response, reverse("dues_dashboard"))
+
+    def test_treasurer_from_another_chapter_gets_404(self):
+        other_chapter, other_positions = make_chapter_with_positions(
+            name="Sigma Nu", nm_invite_code="OTHNM005", active_invite_code="OTHACT05"
+        )
+        outsider = make_user(chapter=other_chapter, position=other_positions["Treasurer"])
+        self.client.force_login(outsider)
+        response = self.client.get(reverse("make_mark_paid", kwargs={"pk": self.due.pk}))
+        self.assertEqual(response.status_code, 404)
 
 
 class DuesMemberViewTests(TestCase):
     def setUp(self):
         self.chapter, self.positions = make_chapter_with_positions()
         self.member = make_user(chapter=self.chapter)
+        self.treasurer = make_user(chapter=self.chapter, position=self.positions["Treasurer"])
 
-    def test_anonymous_user_can_view_without_logging_in(self):
-        # dues_member (URL name brothers_due) is the one dashboard view with
-        # no @login_required — anonymous access is currently possible.
-        # Pinning the gap; see codebase-notes.md §6.
+    def test_anonymous_user_is_redirected_to_login(self):
+        # Issue #51: this page used to be readable without logging in.
+        url = reverse("brothers_due", kwargs={"pk": self.member.pk})
+        response = self.client.get(url)
+        self.assertRedirects(response, f"{reverse('login')}?next={url}")
+
+    def test_member_without_finance_permission_is_denied(self):
+        self.client.force_login(self.member)
+        response = self.client.get(
+            reverse("brothers_due", kwargs={"pk": self.member.pk})
+        )
+        self.assertRedirects(response, reverse("dues_dashboard"))
+
+    def test_treasurer_from_another_chapter_gets_404(self):
+        other_chapter, other_positions = make_chapter_with_positions(
+            name="Sigma Nu", nm_invite_code="OTHNM006", active_invite_code="OTHACT06"
+        )
+        outsider = make_user(chapter=other_chapter, position=other_positions["Treasurer"])
+        self.client.force_login(outsider)
+        response = self.client.get(
+            reverse("brothers_due", kwargs={"pk": self.member.pk})
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_treasurer_can_view_member_in_own_chapter(self):
+        self.client.force_login(self.treasurer)
         response = self.client.get(
             reverse("brothers_due", kwargs={"pk": self.member.pk})
         )
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "dashboard/member_dues_details.html")
-
-    def test_cross_chapter_user_can_view_with_no_scoping(self):
-        other_chapter, _ = make_chapter_with_positions(
-            name="Sigma Nu", nm_invite_code="OTHNM006", active_invite_code="OTHACT06"
-        )
-        outsider = make_user(chapter=other_chapter)
-        self.client.force_login(outsider)
-        response = self.client.get(
-            reverse("brothers_due", kwargs={"pk": self.member.pk})
-        )
-        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["brother"], self.member)
 
     def test_nonexistent_pk_returns_404(self):
+        self.client.force_login(self.treasurer)
         response = self.client.get(reverse("brothers_due", kwargs={"pk": 999999}))
         self.assertEqual(response.status_code, 404)
 
@@ -120,6 +137,7 @@ class DuesMemberViewTests(TestCase):
             title="Paid", amount="10.00", due_date=date(2025, 1, 1),
             assigned_to=self.member, is_paid=True,
         )
+        self.client.force_login(self.treasurer)
         response = self.client.get(
             reverse("brothers_due", kwargs={"pk": self.member.pk})
         )
@@ -328,17 +346,23 @@ class PaymentSuccessViewTests(TestCase):
         messages = list(response.context["messages"])
         self.assertTrue(any("problem verifying your payment" in str(m) for m in messages))
 
+    def paid_session(self, user=None, **metadata):
+        """A mocked Stripe Checkout Session that Stripe reports as paid and
+        that was started by `user` (self.user by default)."""
+        amount_total = metadata.pop("amount_total", 10000)
+        metadata.setdefault("user_id", str((user or self.user).id))
+        return MagicMock(payment_status="paid", amount_total=amount_total, metadata=metadata)
+
     @patch("dashboard.views.stripe.checkout.Session.retrieve")
-    def test_bulk_payment_marks_owned_dues_paid_and_zeroed(self, mock_retrieve):
+    def test_bulk_payment_marks_owned_dues_paid_and_keeps_amounts(self, mock_retrieve):
         due2 = Due.objects.create(
             title="Spring Dues", amount="50.00", due_date=date.today(),
             assigned_to=self.user, is_paid=False,
         )
-        mock_retrieve.return_value = MagicMock(
-            metadata={
-                "payment_type": "bulk_payment",
-                "due_ids_str": f"{self.due.pk},{due2.pk}",
-            }
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="bulk_payment",
+            due_ids_str=f"{self.due.pk},{due2.pk}",
+            amount_total=15000,
         )
         response = self.client.get(
             reverse("payment_success"), {"session_id": "sess_bulk"}
@@ -348,9 +372,10 @@ class PaymentSuccessViewTests(TestCase):
         self.due.refresh_from_db()
         due2.refresh_from_db()
         self.assertTrue(self.due.is_paid)
-        self.assertEqual(self.due.amount, 0)
         self.assertTrue(due2.is_paid)
-        self.assertEqual(due2.amount, 0)
+        # Amounts are kept so payment history shows what was paid.
+        self.assertEqual(self.due.amount, Decimal("100.00"))
+        self.assertEqual(due2.amount, Decimal("50.00"))
 
     @patch("dashboard.views.stripe.checkout.Session.retrieve")
     def test_bulk_payment_only_affects_dues_owned_by_requesting_user(self, mock_retrieve):
@@ -359,11 +384,9 @@ class PaymentSuccessViewTests(TestCase):
             title="Not Yours", amount="20.00", due_date=date.today(),
             assigned_to=other_user, is_paid=False,
         )
-        mock_retrieve.return_value = MagicMock(
-            metadata={
-                "payment_type": "bulk_payment",
-                "due_ids_str": f"{self.due.pk},{others_due.pk}",
-            }
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="bulk_payment",
+            due_ids_str=f"{self.due.pk},{others_due.pk}",
         )
         self.client.get(reverse("payment_success"), {"session_id": "sess_bulk2"})
         others_due.refresh_from_db()
@@ -372,8 +395,8 @@ class PaymentSuccessViewTests(TestCase):
 
     @patch("dashboard.views.stripe.checkout.Session.retrieve")
     def test_single_payment_full_amount_marks_due_paid(self, mock_retrieve):
-        mock_retrieve.return_value = MagicMock(
-            metadata={"payment_type": "single", "due_id": str(self.due.pk)},
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="single", due_id=str(self.due.pk),
             amount_total=10000,  # $100.00 in cents
         )
         response = self.client.get(
@@ -386,8 +409,8 @@ class PaymentSuccessViewTests(TestCase):
 
     @patch("dashboard.views.stripe.checkout.Session.retrieve")
     def test_single_payment_partial_amount_leaves_remaining_balance(self, mock_retrieve):
-        mock_retrieve.return_value = MagicMock(
-            metadata={"payment_type": "single", "due_id": str(self.due.pk)},
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="single", due_id=str(self.due.pk),
             amount_total=4000,  # $40.00 in cents
         )
         response = self.client.get(
@@ -400,43 +423,83 @@ class PaymentSuccessViewTests(TestCase):
 
     @patch("dashboard.views.stripe.checkout.Session.retrieve")
     def test_replayed_session_id_does_not_mutate_due_again(self, mock_retrieve):
-        mock_retrieve.return_value = MagicMock(
-            metadata={"payment_type": "single", "due_id": str(self.due.pk)},
-            amount_total=4000,
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="single", due_id=str(self.due.pk), amount_total=4000,
         )
         self.client.get(reverse("payment_success"), {"session_id": "sess_replay"})
         self.due.refresh_from_db()
         self.assertEqual(self.due.amount, Decimal("60.00"))
 
-        # Second hit with the same session_id should be a no-op (idempotency
-        # guard via request.session['processed_sessions']).
+        # Logging out wipes the browser session. The replay guard lives in
+        # the database, so a fresh login still can't apply it twice.
+        self.client.logout()
+        self.client.force_login(self.user)
         response = self.client.get(
             reverse("payment_success"), {"session_id": "sess_replay"}
         )
         self.assertEqual(response.status_code, 200)
         self.due.refresh_from_db()
         self.assertEqual(self.due.amount, Decimal("60.00"))
+        self.assertEqual(ProcessedStripeSession.objects.filter(session_id="sess_replay").count(), 1)
 
     @patch("dashboard.views.stripe.checkout.Session.retrieve")
-    def test_single_payment_has_no_ownership_check_on_the_due(self, mock_retrieve):
-        # get_object_or_404(Due, pk=due_id) here has no assigned_to filter,
-        # unlike payment_page/process_payment which both scope by
-        # assigned_to=request.user. Any logged-in user who obtains/guesses a
-        # valid session_id referencing someone else's due can mark it paid
-        # through this view. Pinning the gap; see codebase-notes.md §6.
+    def test_replayed_bulk_session_is_recorded_once(self, mock_retrieve):
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="bulk_payment", due_ids_str=str(self.due.pk),
+        )
+        self.client.get(reverse("payment_success"), {"session_id": "sess_bulk_replay"})
+        self.client.get(reverse("payment_success"), {"session_id": "sess_bulk_replay"})
+        self.assertEqual(
+            ProcessedStripeSession.objects.filter(session_id="sess_bulk_replay").count(), 1
+        )
+
+    @patch("dashboard.views.stripe.checkout.Session.retrieve")
+    def test_unpaid_session_changes_nothing(self, mock_retrieve):
+        # A session exists as soon as checkout starts, even if the member
+        # cancels. Opening the success link for it must not mark anything paid.
+        session = self.paid_session(
+            payment_type="bulk_payment", due_ids_str=str(self.due.pk),
+        )
+        session.payment_status = "unpaid"
+        mock_retrieve.return_value = session
+        response = self.client.get(
+            reverse("payment_success"), {"session_id": "sess_abandoned"}, follow=True
+        )
+        self.assertRedirects(response, reverse("dues_dashboard"))
+        self.due.refresh_from_db()
+        self.assertFalse(self.due.is_paid)
+        self.assertEqual(self.due.amount, Decimal("100.00"))
+        self.assertFalse(ProcessedStripeSession.objects.exists())
+
+    @patch("dashboard.views.stripe.checkout.Session.retrieve")
+    def test_session_started_by_another_user_changes_nothing(self, mock_retrieve):
+        other_user = make_user(chapter=self.chapter)
+        mock_retrieve.return_value = self.paid_session(
+            user=other_user, payment_type="single", due_id=str(self.due.pk),
+        )
+        response = self.client.get(
+            reverse("payment_success"), {"session_id": "sess_not_mine"}, follow=True
+        )
+        self.assertRedirects(response, reverse("dashboard"))
+        self.due.refresh_from_db()
+        self.assertEqual(self.due.amount, Decimal("100.00"))
+        self.assertFalse(ProcessedStripeSession.objects.exists())
+
+    @patch("dashboard.views.stripe.checkout.Session.retrieve")
+    def test_single_payment_for_someone_elses_due_returns_404(self, mock_retrieve):
+        # Issue #54: the Due lookup is now limited to the logged-in user.
         other_user = make_user(chapter=self.chapter)
         others_due = Due.objects.create(
             title="Not Yours", amount="100.00", due_date=date.today(),
             assigned_to=other_user, is_paid=False,
         )
-        mock_retrieve.return_value = MagicMock(
-            metadata={"payment_type": "single", "due_id": str(others_due.pk)},
-            amount_total=10000,
+        mock_retrieve.return_value = self.paid_session(
+            payment_type="single", due_id=str(others_due.pk),
         )
-        # self.user (not others_due's owner) hits payment_success.
         response = self.client.get(
             reverse("payment_success"), {"session_id": "sess_cross_user"}
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 404)
         others_due.refresh_from_db()
-        self.assertTrue(others_due.is_paid)
+        self.assertFalse(others_due.is_paid)
+        self.assertEqual(others_due.amount, Decimal("100.00"))

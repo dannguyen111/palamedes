@@ -10,18 +10,13 @@ stay fast and don't implicitly depend on admin internals.
 """
 from django.test import override_settings
 
+from palamedes.test_runner import TEST_STORAGES
 from users.models import Chapter, Position, CustomUser
 
-# base.html (extended by every homepage/users/dashboard template) references
-# {% static %} assets. STATICFILES_STORAGE is WhiteNoise's
-# CompressedManifestStaticFilesStorage in settings.py, which requires a
-# collectstatic-generated manifest that doesn't exist in this test
-# environment. Swap to the plain storage backend for any test that renders a
-# full page, or {% static %} raises ValueError: Missing staticfiles manifest
-# entry (see docs/testing/codebase-notes.md §2).
-PLAIN_STATIC_STORAGE = override_settings(
-    STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage"
-)
+# Plain local storage for tests that render full pages. The whole suite
+# already gets this from palamedes.test_runner.LocalStorageTestRunner; the
+# decorator stays so these classes also work under a different runner.
+PLAIN_STATIC_STORAGE = override_settings(STORAGES=TEST_STORAGES)
 
 POSITION_DEFAULTS = {
     "President": dict(

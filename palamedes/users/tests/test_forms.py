@@ -78,6 +78,31 @@ class CustomUserCreationFormTests(TestCase):
         self.assertEqual(user.position, self.positions["President"])
         self.assertEqual(user.status, "ACT")
 
+    def test_president_email_match_ignores_case(self):
+        ChapterRequest.objects.create(
+            fraternity_name=self.chapter.name,
+            university=self.chapter.university,
+            president_email="JDoe@Example.com",
+            is_approved=True,
+        )
+        form = CustomUserCreationForm(data=self.valid_data(self.chapter.active_invite_code))
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.save().position, self.positions["President"])
+
+    def test_duplicate_approved_requests_do_not_crash_president_signup(self):
+        # H2: two approved requests for one chapter used to make the .get()
+        # here raise MultipleObjectsReturned.
+        for _ in range(2):
+            ChapterRequest.objects.create(
+                fraternity_name=self.chapter.name,
+                university=self.chapter.university,
+                president_email="jdoe@example.com",
+                is_approved=True,
+            )
+        form = CustomUserCreationForm(data=self.valid_data(self.chapter.active_invite_code))
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.save().position, self.positions["President"])
+
     def test_save_with_unapproved_matching_chapter_request_does_not_force_president(self):
         ChapterRequest.objects.create(
             fraternity_name=self.chapter.name,

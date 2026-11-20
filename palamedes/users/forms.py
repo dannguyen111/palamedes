@@ -42,17 +42,20 @@ class CustomUserCreationForm(UserCreationForm):
         else:
             assigned_status = 'NM'
 
-        # Check if this user's email matches the APPROVED request email
-        try:
-            approved_req = ChapterRequest.objects.get(
-                fraternity_name=chapter.name,
-                university=chapter.university,
-                president_email=user.email,
-                is_approved=True
-            )
+        # Check if this user's email matches the APPROVED request email.
+        # .exists() (not .get()) so duplicate approved requests can't crash
+        # sign-up; iexact so the email's capitalisation doesn't matter.
+        is_president = ChapterRequest.objects.filter(
+            fraternity_name=chapter.name,
+            university=chapter.university,
+            president_email__iexact=user.email,
+            is_approved=True,
+        ).exists()
+
+        if is_president:
             user.position = Position.objects.get(chapter=chapter, title="President")
             user.status = 'ACT'
-        except ChapterRequest.DoesNotExist:
+        else:
             user.position = Position.objects.get(chapter=chapter, title="No Position")
             user.status = assigned_status
 

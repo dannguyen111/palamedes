@@ -107,3 +107,51 @@ class ApproveRequestsActionTests(TestCase):
         chapter = Chapter.objects.get()
         self.assertIsNotNone(chapter.nm_invite_code)
         self.assertIsNotNone(chapter.active_invite_code)
+
+    def test_two_requests_for_same_chapter_do_not_duplicate_positions(self):
+        # H2: two separate requests (e.g. a double submit) for one chapter,
+        # approved together, used to create every position twice.
+        first = self.make_request()
+        second = self.make_request()
+        approve_requests(None, None, ChapterRequest.objects.filter(pk__in=[first.pk, second.pk]))
+        chapter = Chapter.objects.get()
+        self.assertEqual(Position.objects.filter(chapter=chapter).count(), 4)
+        for title in ("President", "Vice President", "Treasurer", "No Position"):
+            self.assertEqual(Position.objects.filter(chapter=chapter, title=title).count(), 1)
+
+    def test_registration_works_after_duplicate_requests_are_approved(self):
+        from users.forms import CustomUserCreationForm
+
+        first = self.make_request()
+        second = self.make_request()
+        approve_requests(None, None, ChapterRequest.objects.filter(pk__in=[first.pk, second.pk]))
+        chapter = Chapter.objects.get()
+        password = "S0meStr0ngPass!23"
+        member = CustomUserCreationForm(data={
+            "username": "newmember", "email": "new@example.com",
+            "first_name": "New", "last_name": "Member",
+            "password1": password, "password2": password,
+            "invite_code": chapter.nm_invite_code,
+        })
+        self.assertTrue(member.is_valid(), member.errors)
+        self.assertEqual(member.save().position.title, "No Position")
+        president = CustomUserCreationForm(data={
+            "username": "pres", "email": "president@example.com",
+            "first_name": "Pres", "last_name": "Ident",
+            "password1": password, "password2": password,
+            "invite_code": chapter.active_invite_code,
+        })
+        self.assertTrue(president.is_valid(), president.errors)
+        self.assertEqual(president.save().position.title, "President")
+
+    def test_email_failure_leaves_request_unapproved_and_creates_nothing(self):
+        from unittest import mock
+
+        req = self.make_request()
+        with mock.patch("homepage.admin.send_mail", side_effect=OSError("smtp down")):
+            with self.assertRaises(OSError):
+                approve_requests(None, None, ChapterRequest.objects.filter(pk=req.pk))
+        req.refresh_from_db()
+        self.assertFalse(req.is_approved)
+        self.assertEqual(Chapter.objects.count(), 0)
+        self.assertEqual(Position.objects.count(), 0)

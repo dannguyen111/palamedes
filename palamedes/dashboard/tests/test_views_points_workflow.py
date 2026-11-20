@@ -130,6 +130,24 @@ class AssignPointsViewTests(TestCase):
         self.assertEqual(point.assigned_approver, active_user)
         self.assertEqual(point.status, "APPROVED")
 
+    def test_exec_cannot_assign_points_to_self(self):
+        manager = make_user(
+            chapter=self.chapter, status="ACT", position=self.positions["President"]
+        )
+        self.client.force_login(manager)
+        response = self.client.post(
+            reverse("assign_points"),
+            data={
+                "user": manager.pk,
+                "amount": 777,
+                "description": "Me",
+                "date_for": date.today(),
+            },
+        )
+        self.assertEqual(response.status_code, 200)  # form re-rendered with an error
+        self.assertTrue(response.context["form"].errors)
+        self.assertFalse(HousePoint.objects.exists())
+
 
 @PLAIN_STATIC_STORAGE
 class ManagePointRequestViewTests(TestCase):
@@ -174,23 +192,21 @@ class ManagePointRequestViewTests(TestCase):
         point.refresh_from_db()
         self.assertEqual(point.status, "PENDING")
 
-    def test_position_none_crashes_regardless_of_other_permissions(self):
-        # is_top2 = request.user.position.can_manage_points ... is evaluated
-        # unconditionally and unguarded, so ANY call by a position=None user
-        # raises AttributeError before the is_approver/is_owner_countering
-        # checks even matter — see codebase-notes.md §6.
+    def test_position_none_cannot_approve_unassigned_point(self):
+        # With no position there is no can_manage_points, so an unassigned
+        # point can't be approved by this user.
         point = self.make_point(assigned_approver=None)
-        approver_without_position = make_user(
+        user_without_position = make_user(
             chapter=self.chapter, status="ACT", position=None
         )
-        # Even though this user isn't the approver/submitter, the crash
-        # happens before permission is even evaluated.
-        self.client.force_login(approver_without_position)
-        with self.assertRaises(AttributeError):
-            self.client.post(
-                reverse("manage_point", kwargs={"pk": point.pk}),
-                data={"action": "approve"},
-            )
+        self.client.force_login(user_without_position)
+        response = self.client.post(
+            reverse("manage_point", kwargs={"pk": point.pk}),
+            data={"action": "approve"},
+        )
+        self.assertRedirects(response, reverse("points_hub"))
+        point.refresh_from_db()
+        self.assertEqual(point.status, "PENDING")
 
     def test_assigned_approver_can_approve(self):
         point = self.make_point(assigned_approver=self.approver)
@@ -205,7 +221,7 @@ class ManagePointRequestViewTests(TestCase):
         self.assertEqual(point.feedback, "looks good")
         self.assertEqual(point.assigned_approver, self.approver)
 
-    def test_approve_leaves_approver_unchanged_on_self_approval(self):
+    def test_assigned_approver_cannot_approve_own_points(self):
         point = self.make_point(submitted_by=self.submitter, assigned_approver=self.submitter)
         self.client.force_login(self.submitter)
         response = self.client.post(
@@ -213,7 +229,50 @@ class ManagePointRequestViewTests(TestCase):
         )
         self.assertRedirects(response, reverse("points_hub"))
         point.refresh_from_db()
-        self.assertEqual(point.assigned_approver, self.submitter)
+        self.assertEqual(point.status, "PENDING")
+
+    def test_exec_cannot_approve_own_unassigned_request(self):
+        # Execs don't see their own requests in the queue; the view must
+        # refuse a hand-crafted POST too.
+        manager = make_user(
+            chapter=self.chapter, status="ACT", position=self.positions["President"]
+        )
+        point = self.make_point(user=manager, submitted_by=manager, assigned_approver=None, amount=9999)
+        self.client.force_login(manager)
+        response = self.client.post(
+            reverse("manage_point", kwargs={"pk": point.pk}), data={"action": "approve"}
+        )
+        self.assertRedirects(response, reverse("points_hub"))
+        point.refresh_from_db()
+        self.assertEqual(point.status, "PENDING")
+
+    def test_owner_can_accept_a_counter_offer(self):
+        point = self.make_point(status="COUNTERED", assigned_approver=self.approver, amount=7)
+        self.client.force_login(self.submitter)
+        response = self.client.post(
+            reverse("manage_point", kwargs={"pk": point.pk}), data={"action": "approve"}
+        )
+        self.assertRedirects(response, reverse("points_hub"))
+        point.refresh_from_db()
+        self.assertEqual(point.status, "APPROVED")
+        self.assertEqual(point.amount, 7)
+
+    def test_exec_from_another_chapter_gets_404(self):
+        point = self.make_point(assigned_approver=None)
+        other_chapter, other_positions = make_chapter_with_positions(
+            name="Sigma Chi", university="UCLA",
+            nm_invite_code="NMCODE02", active_invite_code="ACTCODE2",
+        )
+        outside_exec = make_user(
+            chapter=other_chapter, status="ACT", position=other_positions["President"]
+        )
+        self.client.force_login(outside_exec)
+        response = self.client.post(
+            reverse("manage_point", kwargs={"pk": point.pk}), data={"action": "reject"}
+        )
+        self.assertEqual(response.status_code, 404)
+        point.refresh_from_db()
+        self.assertEqual(point.status, "PENDING")
 
     def test_top2_can_approve_unassigned_request(self):
         point = self.make_point(assigned_approver=None)
@@ -370,6 +429,36 @@ class EditLogPointViewTests(TestCase):
             reverse("edit_log_point", kwargs={"pk": point.pk}), data={"amount": "not-a-number"}
         )
         self.assertRedirects(response, reverse("points_hub"))
+        point.refresh_from_db()
+        self.assertEqual(point.amount, 10)
+
+    def test_exec_cannot_edit_own_log(self):
+        manager = make_user(
+            chapter=self.chapter, status="ACT", position=self.positions["President"]
+        )
+        point = self.make_point(user=manager)
+        self.client.force_login(manager)
+        response = self.client.post(
+            reverse("edit_log_point", kwargs={"pk": point.pk}), data={"amount": "9999"}
+        )
+        self.assertRedirects(response, reverse("points_hub"))
+        point.refresh_from_db()
+        self.assertEqual(point.amount, 10)
+
+    def test_exec_from_another_chapter_gets_404(self):
+        point = self.make_point()
+        other_chapter, other_positions = make_chapter_with_positions(
+            name="Sigma Chi", university="UCLA",
+            nm_invite_code="NMCODE02", active_invite_code="ACTCODE2",
+        )
+        outside_exec = make_user(
+            chapter=other_chapter, status="ACT", position=other_positions["President"]
+        )
+        self.client.force_login(outside_exec)
+        response = self.client.post(
+            reverse("edit_log_point", kwargs={"pk": point.pk}), data={"amount": "-500"}
+        )
+        self.assertEqual(response.status_code, 404)
         point.refresh_from_db()
         self.assertEqual(point.amount, 10)
 

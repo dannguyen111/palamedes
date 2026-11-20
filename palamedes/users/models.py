@@ -24,7 +24,14 @@ class Position(models.Model):
     can_manage_tasks = models.BooleanField(default=False, help_text="Can assign tasks to others.")
     can_create_positions = models.BooleanField(default=False, help_text="Can create new officer positions (President only).")
     can_manage_nm_points = models.BooleanField(default=False, help_text="Can manage and edit New Member points.")
-    
+
+    class Meta:
+        constraints = [
+            # Registration looks positions up by title ("President",
+            # "No Position"), so a chapter must never have two with one title.
+            models.UniqueConstraint(fields=['chapter', 'title'], name='unique_position_title_per_chapter'),
+        ]
+
     def __str__(self):
         return f"{self.title} ({self.chapter.name})"
 
